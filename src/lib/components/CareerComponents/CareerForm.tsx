@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import InterviewQuestionGeneratorV2 from "./InterviewQuestionGeneratorV2";
 import RichTextEditor from "@/lib/components/CareerComponents/RichTextEditor";
 import CustomDropdown from "@/lib/components/CareerComponents/CustomDropdown";
-import TipsComponent from "@/lib/components/CareerComponents/TipsComponent";
 import philippineCitiesAndProvinces from "../../../../public/philippines-locations.json";
 import { candidateActionToast, errorToast } from "@/lib/Utils";
 import { useAppContext } from "@/lib/context/AppContext";
@@ -2191,8 +2190,163 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           )}
         </div>
         
-        {/* Tips Component - Only show on steps 1-3 */}
-        {currentStep <= 2 && <TipsComponent currentStep={currentStep} />}
+        {/* Tips Cards - Only show on steps 1-3 */}
+        {currentStep <= 2 && (
+          <div style={{ width: "320px", display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Step 1 Tips */}
+            {currentStep === 0 && (
+              <div className="layered-card-outer">
+                <div className="layered-card-middle">
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <i 
+                      className="la la-lightbulb" 
+                      style={{ 
+                        fontSize: 20, 
+                        background: "linear-gradient(90deg, #fccec0 0%, #ebacc9 33%, #ceb6da 66%, #9fcaed 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text"
+                      }}
+                    ></i>
+                    <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>Tips</span>
+                  </div>
+                  <div className="layered-card-content">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Use clear, standard job titles
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          for better searchability (e.g., "Software Engineer" instead of "Code Ninja" or "Tech Rockstar").
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Avoid abbreviations
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          or internal role codes that applicants may not understand (e.g., use "QA Engineer" instead of "QE" or "QA-LT").
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Keep it concise
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          — job titles should be no more than a few words (2–4 max), avoiding fluff or marketing terms.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2 Tips */}
+            {currentStep === 1 && (
+              <div className="layered-card-outer">
+                <div className="layered-card-middle">
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <i 
+                      className="la la-lightbulb" 
+                      style={{ 
+                        fontSize: 20, 
+                        background: "linear-gradient(90deg, #fccec0 0%, #ebacc9 33%, #ceb6da 66%, #9fcaed 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text"
+                      }}
+                    ></i>
+                    <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>Tips</span>
+                  </div>
+                  <div className="layered-card-content">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Set clear screening criteria
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Define specific requirements that candidates must meet to pass the initial CV screening.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Use relevant keywords
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Include industry-specific terms and skills that the AI should look for in candidate CVs.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Keep prompts focused
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Avoid overly complex instructions that might confuse the AI screening process.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 Tips */}
+            {currentStep === 2 && (
+              <div className="layered-card-outer">
+                <div className="layered-card-middle">
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <i 
+                      className="la la-lightbulb" 
+                      style={{ 
+                        fontSize: 20, 
+                        background: "linear-gradient(90deg, #fccec0 0%, #ebacc9 33%, #ceb6da 66%, #9fcaed 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text"
+                      }}
+                    ></i>
+                    <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>Tips</span>
+                  </div>
+                  <div className="layered-card-content">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Design targeted questions
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Create questions that assess the specific skills and experience needed for the role.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Balance technical and soft skills
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Include questions that evaluate both technical competency and cultural fit.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#181D27", marginBottom: 4 }}>
+                          Test the flow
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6c757d", margin: 0 }}>
+                          Review your interview questions to ensure they create a natural conversation flow.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {showSaveModal && (
         <CareerActionModal action={showSaveModal} onAction={(action) => saveCareer(action)} />
