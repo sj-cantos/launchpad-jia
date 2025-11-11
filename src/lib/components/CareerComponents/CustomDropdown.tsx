@@ -14,7 +14,8 @@ export default function CustomDropdown(props) {
               width: "100%", 
               textTransform: "capitalize",
               borderColor: hasError ? "#EF4444" : undefined,
-              borderWidth: hasError ? "2px" : undefined
+              borderWidth: hasError ? "2px" : undefined,
+              whiteSpace: "nowrap"
             }}
             type="button"
             onClick={() => setDropdownOpen((v) => !v)}
