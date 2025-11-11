@@ -2,9 +2,10 @@ import { useState } from "react";
 
 interface AccordionItem {
   id: string;
-  title: string;
+  title: string | React.ReactNode;
   content: React.ReactNode;
   isOpen?: boolean;
+  onEdit?: () => void;
 }
 
 interface AccordionProps {
@@ -79,6 +80,10 @@ export default function Accordion({ items, allowMultiple = false, className = ""
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "4px"
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.onEdit?.();
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "#E5E7EB";
