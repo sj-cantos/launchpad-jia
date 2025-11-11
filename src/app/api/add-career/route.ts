@@ -103,11 +103,17 @@ export async function POST(request: Request) {
       employmentType,
     };
 
-    await db.collection("careers").insertOne(career);
+    const insertResult = await db.collection("careers").insertOne(career);
+
+    // Attach the Mongo _id to the returned career object for easier frontend handling
+    const insertedId = insertResult.insertedId;
+    // Note: career already contains a string `id` GUID; attach the Mongo ObjectId as _id
+    const returnedCareer = { ...career, _id: insertedId };
 
     return NextResponse.json({
       message: "Career added successfully",
-      career,
+      career: returnedCareer,
+      _id: insertedId,
     });
   } catch (error) {
     console.error("Error adding career:", error);
