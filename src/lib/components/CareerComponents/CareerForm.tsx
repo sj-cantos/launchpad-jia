@@ -685,7 +685,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       <style dangerouslySetInnerHTML={{ __html: errorBorderStyles }} />
       <div className="col">
         {formType === "add" ? (<div style={{ marginBottom: "35px", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: 550, color: "#111827" }}>
+          <h1 style={{ fontSize: "24px", fontWeight: 550, color: "#374151" }}>
             {(isDraft || currentStep > 0) && jobTitle ? `[DRAFT] ${jobTitle}` : "Add new career"}
           </h1>
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
@@ -704,7 +704,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           </div>
         </div>) : (
           <div style={{ marginBottom: "35px", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-            <h1 style={{ fontSize: "24px", fontWeight: 550, color: "#111827" }}>Edit Career Details</h1>
+            <h1 style={{ fontSize: "24px", fontWeight: 550, color: "#374151" }}>Edit Career Details</h1>
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
               <button
                 style={{ width: "fit-content", color: "#414651", background: "#fff", border: "1px solid #D5D7DA", padding: "8px 16px", borderRadius: "60px", cursor: "pointer", whiteSpace: "nowrap" }} onClick={() => {

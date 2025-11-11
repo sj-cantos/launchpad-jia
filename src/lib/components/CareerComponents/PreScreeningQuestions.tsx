@@ -170,21 +170,6 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                 color: "#181D27"
               }}
             />
-            <button
-              onClick={() => deleteQuestion(index)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#DC2626",
-                cursor: "pointer",
-                padding: "4px"
-              }}
-            >
-              <i className="la la-times" style={{ fontSize: 16 }}></i>
-            </button>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <select
               value={question.type}
               onChange={(e) => {
@@ -224,6 +209,18 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
               <option value="checkboxes">Checkboxes</option>
               <option value="range">Range</option>
             </select>
+            <button
+              onClick={() => deleteQuestion(index)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#9CA3AF",
+                cursor: "pointer",
+                padding: "4px"
+              }}
+            >
+              <i className="la la-times" style={{ fontSize: 16 }}></i>
+            </button>
           </div>
 
           {(question.type === 'dropdown' || question.type === 'checkboxes') && question.options && (
@@ -253,7 +250,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                     style={{
                       background: "none",
                       border: "none",
-                      color: question.options!.length === 1 ? "#9CA3AF" : "#DC2626",
+                      color: question.options!.length === 1 ? "#9CA3AF" : "#6B7280",
                       cursor: question.options!.length === 1 ? "not-allowed" : "pointer",
                       padding: "4px"
                     }}
@@ -268,7 +265,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#059669",
+                  color: "#6B7280",
                   cursor: "pointer",
                   fontSize: "14px",
                   display: "flex",
@@ -364,25 +361,26 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
           )}
 
           {questions.length > 0 && (
-            <button
-              onClick={() => deleteQuestion(index)}
-              style={{
-                background: "none",
-                border: "1px solid #DC2626",
-                color: "#DC2626",
-                padding: "6px 12px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                cursor: "pointer",
-                marginTop: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}
-            >
-              <i className="la la-trash" style={{ fontSize: 12 }}></i>
-              Delete Question
-            </button>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+              <button
+                onClick={() => deleteQuestion(index)}
+                style={{
+                  background: "none",
+                  border: "1px solid #DC2626",
+                  color: "#DC2626",
+                  padding: "6px 12px",
+                  borderRadius: "30px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <i className="la la-trash" style={{ fontSize: 12 }}></i>
+                Delete Question
+              </button>
+            </div>
           )}
         </div>
       ))}
