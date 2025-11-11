@@ -5,6 +5,7 @@ import InterviewQuestionGeneratorV2 from "./InterviewQuestionGeneratorV2";
 import RichTextEditor from "@/lib/components/CareerComponents/RichTextEditor";
 import CustomDropdown from "@/lib/components/CareerComponents/CustomDropdown";
 import Accordion from "@/lib/components/CareerComponents/Accordion";
+import PreScreeningQuestions, { PreScreeningQuestion } from "@/lib/components/CareerComponents/PreScreeningQuestions";
 import philippineCitiesAndProvinces from "../../../../public/philippines-locations.json";
 import { candidateActionToast, errorToast } from "@/lib/Utils";
 import { useAppContext } from "@/lib/context/AppContext";
@@ -80,6 +81,9 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   // CV Review settings
   const [cvSecretPrompt, setCvSecretPrompt] = useState(career?.cvSecretPrompt || "");
 
+  // Pre-screening questions
+  const [preScreeningQuestions, setPreScreeningQuestions] = useState<PreScreeningQuestion[]>(career?.preScreeningQuestions || []);
+
   // AI Interview settings
   const [aiInterviewScreening, setAiInterviewScreening] = useState(career?.aiInterviewScreening || "Good Fit and above");
   const [aiSecretPrompt, setAiSecretPrompt] = useState(career?.aiSecretPrompt || "");
@@ -151,6 +155,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
     city: "",
     screeningSetting: "",
     cvSecretPrompt: "",
+    preScreeningQuestions: [] as PreScreeningQuestion[],
     aiInterviewScreening: "",
     aiSecretPrompt: "",
     requireVideo: true
@@ -227,6 +232,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       updatedAt: Date.now(),
       screeningSetting,
       cvSecretPrompt,
+      preScreeningQuestions,
       aiInterviewScreening,
       aiSecretPrompt,
       requireVideo,
@@ -287,6 +293,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       city: city,
       screeningSetting: screeningSetting,
       cvSecretPrompt: cvSecretPrompt,
+      preScreeningQuestions: preScreeningQuestions,
       aiInterviewScreening: aiInterviewScreening,
       aiSecretPrompt: aiSecretPrompt,
       requireVideo: requireVideo
@@ -309,6 +316,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       city: "",
       screeningSetting: "",
       cvSecretPrompt: "",
+      preScreeningQuestions: [],
       aiInterviewScreening: "",
       aiSecretPrompt: "",
       requireVideo: true
@@ -331,6 +339,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       setCity(editFormData.city);
       setScreeningSetting(editFormData.screeningSetting);
       setCvSecretPrompt(editFormData.cvSecretPrompt);
+      setPreScreeningQuestions(editFormData.preScreeningQuestions);
       setAiInterviewScreening(editFormData.aiInterviewScreening);
       setAiSecretPrompt(editFormData.aiSecretPrompt);
       setRequireVideo(editFormData.requireVideo);
@@ -436,6 +445,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           updatedAt: Date.now(),
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           requireVideo,
@@ -477,6 +487,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           createdBy: userInfoSlice,
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           orgID,
@@ -556,6 +567,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           updatedAt: Date.now(),
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           requireVideo,
@@ -601,6 +613,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
         createdBy: userInfoSlice,
         screeningSetting,
         cvSecretPrompt,
+        preScreeningQuestions,
         aiInterviewScreening,
         aiSecretPrompt,
         orgID,
@@ -1281,6 +1294,18 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                     </div>
                   </div>
                 </div>
+
+                {/* Pre-Screening Questions */}
+                <div className="layered-card-outer" style={{ marginTop: 16 }}>
+                  <div className="layered-card-middle">
+                    <div className="layered-card-content">
+                      <PreScreeningQuestions
+                        questions={preScreeningQuestions}
+                        onQuestionsChange={setPreScreeningQuestions}
+                      />
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 
@@ -1790,7 +1815,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                   </div>
                                   
                                   {/* Editable CV Secret Prompt */}
-                                  <div>
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
                                     <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>CV Secret Prompt</label>
                                     <textarea
                                       value={editFormData.cvSecretPrompt}
@@ -1808,15 +1833,23 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                       placeholder="Enter CV screening instructions for AI"
                                     />
                                   </div>
+
+                                  {/* Editable Pre-Screening Questions */}
+                                  <div>
+                                    <PreScreeningQuestions
+                                      questions={editFormData.preScreeningQuestions}
+                                      onQuestionsChange={(questions) => setEditFormData({ ...editFormData, preScreeningQuestions: questions })}
+                                    />
+                                  </div>
                                 </>
                               ) : (
                                 <>
-                                  <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt ? 16 : 0, borderBottom: cvSecretPrompt ? "1px solid #E5E7EB" : "none" }}>
+                                  <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt || preScreeningQuestions.length > 0 ? 16 : 0, borderBottom: cvSecretPrompt || preScreeningQuestions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
                                     <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Screening</span>
                                     <span style={{ fontSize: 15, color: "#6c757d" }}>{screeningSetting || "Not specified"}</span>
                                   </div>
                                   {cvSecretPrompt && (
-                                    <div>
+                                    <div style={{ paddingBottom: 16, marginBottom: preScreeningQuestions.length > 0 ? 16 : 0, borderBottom: preScreeningQuestions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
                                       <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Secret Prompt</span>
                                       <div style={{ 
                                         padding: "12px", 
@@ -1828,6 +1861,48 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                         lineHeight: 1.5
                                       }}>
                                         {cvSecretPrompt}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {preScreeningQuestions.length > 0 && (
+                                    <div>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27" }}>Pre-Screening Questions</span>
+                                        <span style={{ 
+                                          fontSize: 12, 
+                                          fontWeight: 500, 
+                                          color: "#059669", 
+                                          backgroundColor: "#D1FAE5", 
+                                          padding: "2px 6px", 
+                                          borderRadius: "4px" 
+                                        }}>
+                                          {preScreeningQuestions.length}
+                                        </span>
+                                      </div>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                        {preScreeningQuestions.map((question, index) => (
+                                          <div key={question.id}>
+                                            <div style={{ fontSize: 15, fontWeight: 500, color: "#374151", marginBottom: 8 }}>
+                                              {index + 1}. {question.question || "Untitled question"}
+                                            </div>
+                                            {question.type === 'dropdown' && question.options && question.options.length > 0 && (
+                                              <ul style={{ margin: 0, paddingLeft: 20, color: "#6B7280", fontSize: 15 }}>
+                                                {question.options.filter(opt => opt.trim()).map((option, optIndex) => (
+                                                  <li key={optIndex} style={{ marginBottom: 4 }}>
+                                                    {option}
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            )}
+                                            {question.type !== 'dropdown' && (
+                                              <div style={{ fontSize: 14, color: "#9CA3AF", fontStyle: "italic", marginLeft: 20 }}>
+                                                {question.type === 'text' ? 'Text answer' : 
+                                                 question.type === 'number' ? 'Number answer' : 
+                                                 question.type === 'date' ? 'Date answer' : 'Answer'}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                   )}
