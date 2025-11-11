@@ -668,29 +668,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
             </span>
           </div>
 
-          {/* Auto-save indicator and manual save */}
+          {/* Navigation section placeholder for future controls */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {formType === "add" && (
-              <button
-                onClick={() => confirmSaveCareer("inactive")}
-                disabled={isSavingCareer}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #D1D5DB",
-                  background: "#fff",
-                  color: "#374151",
-                  fontSize: 13,
-                  cursor: isSavingCareer ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6
-                }}
-              >
-                <i className="la la-save" style={{ fontSize: 14 }}></i>
-                Save Draft
-              </button>
-            )}
           </div>
         </div>
 
