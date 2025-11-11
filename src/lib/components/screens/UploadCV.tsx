@@ -3,6 +3,7 @@
 "use client";
 
 import Loader from "@/lib/components/commonV2/Loader";
+import QuickPreScreening from "@/lib/components/job-portal/QuickPreScreening";
 import styles from "@/lib/styles/screens/uploadCV.module.scss";
 import { useAppContext } from "@/lib/context/ContextV2";
 import { assetConstants, pathConstants } from "@/lib/utils/constantsV2";
@@ -25,6 +26,7 @@ export default function () {
   const [interview, setInterview] = useState(null);
   const [screeningResult, setScreeningResult] = useState(null);
   const [userCV, setUserCV] = useState(null);
+  const [preScreeningAnswers, setPreScreeningAnswers] = useState(null);
   const cvSections = [
     "Introduction",
     "Current Position",
@@ -36,7 +38,7 @@ export default function () {
     "Certifications",
     "Awards",
   ];
-  const step = ["Submit CV", "CV Screening", "Review Next Steps"];
+  const step = ["Submit CV", "Pre-screening", "AI Review"];
   const stepStatus = ["Completed", "Pending", "In Progress"];
 
   function handleDragOver(e) {
@@ -81,6 +83,55 @@ export default function () {
 
   function handleModal() {
     setModalType("jobDescription");
+  }
+
+  function handlePreScreeningComplete(answers) {
+    // store answers and proceed to AI review immediately using the provided answers
+    setPreScreeningAnswers(answers);
+    proceedToAIReview(answers);
+  }
+
+  function handlePreScreeningSkip() {
+    setPreScreeningAnswers(null);
+    proceedToAIReview(null);
+  }
+
+  function proceedToAIReview(answersArg?: any) {
+    setCurrentStep(step[2]);
+
+    // Include pre-screening answers in the screening request
+    const screeningData: any = {
+      interviewID: interview.interviewID,
+      userEmail: user.email,
+    };
+
+    // Prefer the provided answersArg (from the callback) to avoid async state timing issues
+    const answersToSend = answersArg !== undefined ? answersArg : preScreeningAnswers;
+
+    if (answersToSend) {
+      screeningData.preScreeningAnswers = answersToSend;
+    }
+
+    axios({
+      url: "/api/whitecloak/screen-cv",
+      method: "POST",
+      data: screeningData,
+    })
+      .then((res) => {
+        const result = res.data;
+
+        if (result.error) {
+          alert(result.message);
+          setCurrentStep(step[0]);
+        } else {
+          setScreeningResult(result);
+        }
+      })
+      .catch((err) => {
+        alert("Error screening CV. Please try again.");
+        setCurrentStep(step[0]);
+        console.log(err);
+      });
   }
 
   function handleRedirection(type) {
@@ -228,8 +279,7 @@ export default function () {
       }
     }
 
-    setCurrentStep(step[1]);
-
+    // Save CV data first
     if (hasChanges) {
       const formattedUserCV = cvSections.map((section) => ({
         name: section,
@@ -266,40 +316,21 @@ export default function () {
         })
         .catch((err) => {
           alert("Error saving CV. Please try again.");
-          setCurrentStep(step[0]);
           console.log(err);
         });
     }
 
-    setHasChanges(true);
-
-    axios({
-      url: "/api/whitecloak/screen-cv",
-      method: "POST",
-      data: {
-        interviewID: interview.interviewID,
-        userEmail: user.email,
-      },
-    })
-      .then((res) => {
-        const result = res.data;
-
-        if (result.error) {
-          alert(result.message);
-          setCurrentStep(step[0]);
-        } else {
-          setCurrentStep(step[2]);
-          setScreeningResult(result);
-        }
-      })
-      .catch((err) => {
-        alert("Error screening CV. Please try again.");
-        setCurrentStep(step[0]);
-        console.log(err);
-      })
-      .finally(() => {
-        setHasChanges(false);
-      });
+    // Check if job has pre-screening questions
+    const hasPreScreeningQuestions = interview?.preScreeningQuestions && 
+      interview.preScreeningQuestions.length > 0;
+    
+    if (hasPreScreeningQuestions) {
+      // Move to pre-screening step
+      setCurrentStep(step[1]);
+    } else {
+      // No pre-screening, go directly to AI review
+      proceedToAIReview();
+    }
   }
 
   function handleFileSubmit(file) {
@@ -602,6 +633,7 @@ export default function () {
                       </div>
                     </div>
                   ))}
+                  
                   <button onClick={handleCVScreen}>Submit CV</button>
                 </div>
               )}
@@ -609,6 +641,26 @@ export default function () {
           )}
 
           {currentStep == step[1] && (
+            <div className={styles.cvScreeningContainer}>
+              {interview?.preScreeningQuestions && interview.preScreeningQuestions.length > 0 ? (
+                <QuickPreScreening
+                  questions={interview.preScreeningQuestions}
+                  onComplete={handlePreScreeningComplete}
+                  onSkip={handlePreScreeningSkip}
+                />
+              ) : (
+                <div>
+                  <span className={styles.title}>Pre-screening Complete</span>
+                  <span className={styles.description}>
+                    No additional questions required. Proceeding to AI review.
+                  </span>
+                  <button onClick={() => proceedToAIReview()}>Continue</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep == step[2] && !screeningResult && (
             <div className={styles.cvScreeningContainer}>
               <img alt="" src={assetConstants.loading} />
               <span className={styles.title}>Sit tight!</span>

@@ -5,9 +5,12 @@ import React, { useState } from "react";
 export interface PreScreeningQuestion {
   id: string;
   question: string;
-  type: 'dropdown' | 'text' | 'number' | 'date';
+  type: 'dropdown' | 'short-answer' | 'long-answer' | 'checkboxes' | 'range';
   options?: string[];
   required?: boolean;
+  rangeMin?: number;
+  rangeMax?: number;
+  rangeCurrency?: string;
 }
 
 interface PreScreeningQuestionsProps {
@@ -33,7 +36,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
     const newQuestion: PreScreeningQuestion = {
       id: `custom_${Date.now()}`,
       question: "",
-      type: 'text',
+      type: 'short-answer',
       required: false
     };
     onQuestionsChange([...questions, newQuestion]);
@@ -52,7 +55,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
 
   const addOption = (questionIndex: number) => {
     const question = questions[questionIndex];
-    if (question.options) {
+    if (question.options && (question.type === 'dropdown' || question.type === 'checkboxes')) {
       updateQuestion(questionIndex, {
         options: [...question.options, ""]
       });
@@ -61,7 +64,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
 
   const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
     const question = questions[questionIndex];
-    if (question.options) {
+    if (question.options && (question.type === 'dropdown' || question.type === 'checkboxes')) {
       const updatedOptions = question.options.map((opt, i) => 
         i === optionIndex ? value : opt
       );
@@ -71,7 +74,7 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
     const question = questions[questionIndex];
-    if (question.options && question.options.length > 1) {
+    if (question.options && question.options.length > 1 && (question.type === 'dropdown' || question.type === 'checkboxes')) {
       const updatedOptions = question.options.filter((_, i) => i !== optionIndex);
       updateQuestion(questionIndex, { options: updatedOptions });
     }
@@ -188,10 +191,20 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                 const newType = e.target.value as PreScreeningQuestion['type'];
                 const updates: Partial<PreScreeningQuestion> = { type: newType };
                 
-                if (newType === 'dropdown' && !question.options) {
-                  updates.options = [""];
-                } else if (newType !== 'dropdown') {
+                if (newType === 'dropdown' || newType === 'checkboxes') {
+                  if (!question.options) {
+                    updates.options = [""];
+                  }
+                } else if (newType === 'range') {
                   updates.options = undefined;
+                  if (!question.rangeMin) updates.rangeMin = 0;
+                  if (!question.rangeMax) updates.rangeMax = 100;
+                  if (!question.rangeCurrency) updates.rangeCurrency = 'PHP';
+                } else {
+                  updates.options = undefined;
+                  updates.rangeMin = undefined;
+                  updates.rangeMax = undefined;
+                  updates.rangeCurrency = undefined;
                 }
                 
                 updateQuestion(index, updates);
@@ -201,17 +214,19 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                 border: "1px solid #D1D5DB",
                 borderRadius: "6px",
                 fontSize: "14px",
-                outline: "none"
+                outline: "none",
+                minWidth: "120px"
               }}
             >
+              <option value="short-answer">Short Answer</option>
+              <option value="long-answer">Long Answer</option>
               <option value="dropdown">Dropdown</option>
-              <option value="text">Text</option>
-              <option value="number">Number</option>
-              <option value="date">Date</option>
+              <option value="checkboxes">Checkboxes</option>
+              <option value="range">Range</option>
             </select>
           </div>
 
-          {question.type === 'dropdown' && question.options && (
+          {(question.type === 'dropdown' || question.type === 'checkboxes') && question.options && (
             <div style={{ marginLeft: 24 }}>
               {question.options.map((option, optionIndex) => (
                 <div key={optionIndex} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -265,6 +280,86 @@ export default function PreScreeningQuestions({ questions, onQuestionsChange }: 
                 <i className="la la-plus" style={{ fontSize: 12 }}></i>
                 Add Option
               </button>
+            </div>
+          )}
+
+          {question.type === 'range' && (
+            <div style={{ marginLeft: 24, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: "#6B7280", display: "block", marginBottom: 4 }}>
+                    Minimum
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, color: "#374151" }}>₱</span>
+                    <input
+                      type="number"
+                      value={question.rangeMin || 0}
+                      onChange={(e) => updateQuestion(index, { rangeMin: parseInt(e.target.value) || 0 })}
+                      placeholder="40,000"
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        border: "1px solid #D1D5DB",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    />
+                    <select
+                      value={question.rangeCurrency || 'PHP'}
+                      onChange={(e) => updateQuestion(index, { rangeCurrency: e.target.value })}
+                      style={{
+                        padding: "6px 8px",
+                        border: "1px solid #D1D5DB",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="PHP">PHP</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: "#6B7280", display: "block", marginBottom: 4 }}>
+                    Maximum
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, color: "#374151" }}>₱</span>
+                    <input
+                      type="number"
+                      value={question.rangeMax || 0}
+                      onChange={(e) => updateQuestion(index, { rangeMax: parseInt(e.target.value) || 0 })}
+                      placeholder="60,000"
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        border: "1px solid #D1D5DB",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    />
+                    <select
+                      value={question.rangeCurrency || 'PHP'}
+                      onChange={(e) => updateQuestion(index, { rangeCurrency: e.target.value })}
+                      style={{
+                        padding: "6px 8px",
+                        border: "1px solid #D1D5DB",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="PHP">PHP</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
