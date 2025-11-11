@@ -611,6 +611,89 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           </div>
         )}
 
+        {/* Navigation Controls */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, padding: "0 4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Back Button */}
+            <button
+              disabled={currentStep === 0}
+              onClick={() => {
+                if (currentStep > 0) {
+                  setCurrentStep(currentStep - 1);
+                }
+              }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "1px solid #E5E7EB",
+                background: currentStep === 0 ? "#F9FAFB" : "#fff",
+                cursor: currentStep === 0 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: currentStep === 0 ? "#9CA3AF" : "#374151"
+              }}
+            >
+              <i className="la la-arrow-left" style={{ fontSize: 16 }}></i>
+            </button>
+
+            {/* Forward Button */}
+            <button
+              disabled={currentStep === steps.length - 1}
+              onClick={() => {
+                if (currentStep < steps.length - 1) {
+                  setCurrentStep(currentStep + 1);
+                }
+              }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "1px solid #E5E7EB",
+                background: currentStep === steps.length - 1 ? "#F9FAFB" : "#fff",
+                cursor: currentStep === steps.length - 1 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: currentStep === steps.length - 1 ? "#9CA3AF" : "#374151"
+              }}
+            >
+              <i className="la la-arrow-right" style={{ fontSize: 16 }}></i>
+            </button>
+
+            {/* Progress Indicator */}
+            <span style={{ fontSize: 14, color: "#6B7280", marginLeft: 8 }}>
+              Step {currentStep + 1} of {steps.length}
+            </span>
+          </div>
+
+          {/* Auto-save indicator and manual save */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {formType === "add" && (
+              <button
+                onClick={() => confirmSaveCareer("inactive")}
+                disabled={isSavingCareer}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #D1D5DB",
+                  background: "#fff",
+                  color: "#374151",
+                  fontSize: 13,
+                  cursor: isSavingCareer ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6
+                }}
+              >
+                <i className="la la-save" style={{ fontSize: 14 }}></i>
+                Save Draft
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Stepper Progress - UploadCV Style */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24 }}>
           {/* Step Icons and Connectors */}
