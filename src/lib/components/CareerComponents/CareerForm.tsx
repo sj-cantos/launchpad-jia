@@ -135,6 +135,27 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   const [currentStep, setCurrentStep] = useState(0); // 0-indexed
   const stepStatus = ["Completed", "Pending", "In Progress"];
 
+  // Edit states for accordion sections
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    jobTitle: "",
+    description: "",
+    workSetup: "",
+    workSetupRemarks: "",
+    employmentType: "",
+    minimumSalary: "",
+    maximumSalary: "",
+    salaryNegotiable: true,
+    country: "",
+    province: "",
+    city: "",
+    screeningSetting: "",
+    cvSecretPrompt: "",
+    aiInterviewScreening: "",
+    aiSecretPrompt: "",
+    requireVideo: true
+  });
+
   const isFormValid = () => {
     // For step 1, only require basic fields
     if (currentStep === 0) {
@@ -192,8 +213,10 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       name: user.name,
       email: user.email,
     };
+    const careerId = savedCareerId || career?._id;
+
     const updatedCareer = {
-      _id: career._id,
+      _id: careerId,
       jobTitle,
       description,
       workSetup,
@@ -226,9 +249,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           </div>,
           1300,
           <i className="la la-check-circle" style={{ color: "#039855", fontSize: 32 }}></i>)
-        setTimeout(() => {
-          window.location.href = `/recruiter-dashboard/careers/manage/${career._id}`;
-        }, 1300);
+        // No redirect - keep user on edit form
       }
     } catch (error) {
       console.error(error);
@@ -247,6 +268,91 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
 
     setShowSaveModal(status);
   }
+
+  // Edit helper functions
+  const startEditing = (section: string) => {
+    setEditingSection(section);
+    // Copy current form data to edit form
+    setEditFormData({
+      jobTitle: jobTitle,
+      description: description,
+      workSetup: workSetup,
+      workSetupRemarks: workSetupRemarks,
+      employmentType: employmentType,
+      minimumSalary: minimumSalary,
+      maximumSalary: maximumSalary,
+      salaryNegotiable: salaryNegotiable,
+      country: country,
+      province: province,
+      city: city,
+      screeningSetting: screeningSetting,
+      cvSecretPrompt: cvSecretPrompt,
+      aiInterviewScreening: aiInterviewScreening,
+      aiSecretPrompt: aiSecretPrompt,
+      requireVideo: requireVideo
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingSection(null);
+    setEditFormData({
+      jobTitle: "",
+      description: "",
+      workSetup: "",
+      workSetupRemarks: "",
+      employmentType: "",
+      minimumSalary: "",
+      maximumSalary: "",
+      salaryNegotiable: true,
+      country: "",
+      province: "",
+      city: "",
+      screeningSetting: "",
+      cvSecretPrompt: "",
+      aiInterviewScreening: "",
+      aiSecretPrompt: "",
+      requireVideo: true
+    });
+  };
+
+  const saveEditing = async () => {
+    try {
+      // Update individual state variables with edit data
+      setJobTitle(editFormData.jobTitle);
+      setDescription(editFormData.description);
+      setWorkSetup(editFormData.workSetup);
+      setWorkSetupRemarks(editFormData.workSetupRemarks);
+      setEmploymentType(editFormData.employmentType);
+      setMinimumSalary(editFormData.minimumSalary);
+      setMaximumSalary(editFormData.maximumSalary);
+      setSalaryNegotiable(editFormData.salaryNegotiable);
+      setCountry(editFormData.country);
+      setProvince(editFormData.province);
+      setCity(editFormData.city);
+      setScreeningSetting(editFormData.screeningSetting);
+      setCvSecretPrompt(editFormData.cvSecretPrompt);
+      setAiInterviewScreening(editFormData.aiInterviewScreening);
+      setAiSecretPrompt(editFormData.aiSecretPrompt);
+      setRequireVideo(editFormData.requireVideo);
+
+      // Save to database if editing existing career
+      if (savedCareerId) {
+        await updateCareer("active");
+      }
+
+      setEditingSection(null);
+      candidateActionToast(
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#181D27" }}>Changes saved successfully!</span>
+        </div>,
+        1300,
+        <i className="la la-check-circle" style={{ color: "#039855", fontSize: 32 }}></i>
+      );
+    } catch (error) {
+      console.error("Error saving edits:", error);
+      errorToast("Error saving changes", 1300);
+    }
+  };
 
   const continueToNextStep = async () => {
     // Clear previous errors
@@ -1356,76 +1462,299 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                         {
                           id: "step1",
                           title: "Career Details",
+                          onEdit: () => startEditing('career-details'),
                           content: (
                             <div style={{ display: "flex", flexDirection: "column" }}>
-                              {/* Job Title */}
-                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Title</span>
-                                <span style={{ fontSize: 15, color: "#6c757d" }}>{jobTitle || "Not specified"}</span>
-                              </div>
+                              {editingSection === 'career-details' ? (
+                                <>
+                                  {/* Editable Job Title */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Job Title</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.jobTitle}
+                                      onChange={(e) => setEditFormData({ ...editFormData, jobTitle: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none"
+                                      }}
+                                      placeholder="Enter job title"
+                                    />
+                                  </div>
 
-                              {/* Employment Type & Work Setup */}
-                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
-                                <div style={{ display: "flex", gap: 20 }}>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Employment Type</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{employmentType || "Not specified"}</span>
+                                  {/* Editable Employment Type & Work Setup */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Employment Type</label>
+                                        <select
+                                          value={editFormData.employmentType}
+                                          onChange={(e) => setEditFormData({ ...editFormData, employmentType: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                        >
+                                          <option value="">Select employment type</option>
+                                          <option value="full-time">Full Time</option>
+                                          <option value="part-time">Part Time</option>
+                                          <option value="contract">Contract</option>
+                                          <option value="freelance">Freelance</option>
+                                          <option value="internship">Internship</option>
+                                        </select>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Work Arrangement</label>
+                                        <select
+                                          value={editFormData.workSetup}
+                                          onChange={(e) => setEditFormData({ ...editFormData, workSetup: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                        >
+                                          <option value="">Select work arrangement</option>
+                                          <option value="on-site">On-site</option>
+                                          <option value="remote">Remote</option>
+                                          <option value="hybrid">Hybrid</option>
+                                        </select>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Arrangement</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetup || "Not specified"}</span>
-                                  </div>
-                                </div>
-                              </div>
 
-                              {/* Location */}
-                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
-                                <div style={{ display: "flex", gap: 20 }}>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Country</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{country || "Not specified"}</span>
+                                  {/* Editable Location */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Country</label>
+                                        <input
+                                          type="text"
+                                          value={editFormData.country}
+                                          onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                          placeholder="Enter country"
+                                        />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>State / Province</label>
+                                        <input
+                                          type="text"
+                                          value={editFormData.province}
+                                          onChange={(e) => setEditFormData({ ...editFormData, province: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                          placeholder="Enter province"
+                                        />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>City</label>
+                                        <input
+                                          type="text"
+                                          value={editFormData.city}
+                                          onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                          placeholder="Enter city"
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>State / Province</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{province || "Not specified"}</span>
-                                  </div>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>City</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{city || "Not specified"}</span>
-                                  </div>
-                                </div>
-                              </div>
 
-                              {/* Salary */}
-                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
-                                <div style={{ display: "flex", gap: 20 }}>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Minimum Salary</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>₱{minimumSalary || "0"} PHP</span>
+                                  {/* Editable Salary */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Minimum Salary</label>
+                                        <input
+                                          type="number"
+                                          value={editFormData.minimumSalary}
+                                          onChange={(e) => setEditFormData({ ...editFormData, minimumSalary: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                          placeholder="Enter minimum salary"
+                                        />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Maximum Salary</label>
+                                        <input
+                                          type="number"
+                                          value={editFormData.maximumSalary}
+                                          onChange={(e) => setEditFormData({ ...editFormData, maximumSalary: e.target.value })}
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontSize: "15px",
+                                            outline: "none"
+                                          }}
+                                          placeholder="Enter maximum salary"
+                                        />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Negotiable</label>
+                                        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "15px", color: "#181D27", cursor: "pointer" }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={editFormData.salaryNegotiable}
+                                            onChange={(e) => setEditFormData({ ...editFormData, salaryNegotiable: e.target.checked })}
+                                            style={{ marginRight: "8px" }}
+                                          />
+                                          Salary is negotiable
+                                        </label>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Maximum Salary</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>₱{maximumSalary || "0"} PHP</span>
-                                  </div>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Negotiable</span>
-                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{salaryNegotiable ? "Yes" : "No"}</span>
-                                  </div>
-                                </div>
-                              </div>
 
-                              {/* Job Description */}
-                              <div style={{ paddingBottom: 16, marginBottom: workSetupRemarks ? 16 : 0, borderBottom: workSetupRemarks ? "1px solid #E5E7EB" : "none" }}>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Description</span>
-                                <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: description || "No description provided" }}></div>
-                              </div>
+                                  {/* Editable Job Description */}
+                                  <div style={{ paddingBottom: 16, marginBottom: editFormData.workSetupRemarks ? 16 : 0, borderBottom: editFormData.workSetupRemarks ? "1px solid #E5E7EB" : "none" }}>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Job Description</label>
+                                    <textarea
+                                      value={editFormData.description}
+                                      onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        minHeight: "100px",
+                                        padding: "8px 12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none",
+                                        resize: "vertical"
+                                      }}
+                                      placeholder="Enter job description"
+                                    />
+                                  </div>
 
-                              {/* Work Setup Remarks */}
-                              {workSetupRemarks && (
-                                <div>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Setup Remarks</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetupRemarks}</span>
-                                </div>
+                                  {/* Editable Work Setup Remarks */}
+                                  <div>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Work Setup Remarks</label>
+                                    <textarea
+                                      value={editFormData.workSetupRemarks}
+                                      onChange={(e) => setEditFormData({ ...editFormData, workSetupRemarks: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        minHeight: "60px",
+                                        padding: "8px 12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none",
+                                        resize: "vertical"
+                                      }}
+                                      placeholder="Enter work setup remarks"
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* Job Title */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Title</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{jobTitle || "Not specified"}</span>
+                                  </div>
+
+                                  {/* Employment Type & Work Setup */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Employment Type</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{employmentType || "Not specified"}</span>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Arrangement</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetup || "Not specified"}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Location */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Country</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{country || "Not specified"}</span>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>State / Province</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{province || "Not specified"}</span>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>City</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{city || "Not specified"}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Salary */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <div style={{ display: "flex", gap: 20 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Minimum Salary</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>₱{minimumSalary || "0"} PHP</span>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Maximum Salary</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>₱{maximumSalary || "0"} PHP</span>
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Negotiable</span>
+                                        <span style={{ fontSize: 15, color: "#6c757d" }}>{salaryNegotiable ? "Yes" : "No"}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Job Description */}
+                                  <div style={{ paddingBottom: 16, marginBottom: workSetupRemarks ? 16 : 0, borderBottom: workSetupRemarks ? "1px solid #E5E7EB" : "none" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Description</span>
+                                    <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: description || "No description provided" }}></div>
+                                  </div>
+
+                                  {/* Work Setup Remarks */}
+                                  {workSetupRemarks && (
+                                    <div>
+                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Setup Remarks</span>
+                                      <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetupRemarks}</span>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
@@ -1433,27 +1762,76 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                         {
                           id: "step2",
                           title: "CV Review",
+                          onEdit: () => startEditing('cv-review'),
                           content: (
                             <div style={{ display: "flex", flexDirection: "column" }}>
-                              <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt ? 16 : 0, borderBottom: cvSecretPrompt ? "1px solid #E5E7EB" : "none" }}>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Screening</span>
-                                <span style={{ fontSize: 15, color: "#6c757d" }}>{screeningSetting || "Not specified"}</span>
-                              </div>
-                              {cvSecretPrompt && (
-                                <div>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Secret Prompt</span>
-                                  <div style={{ 
-                                    padding: "12px", 
-                                    backgroundColor: "#F9FAFB", 
-                                    borderRadius: "6px",
-                                    border: "1px solid #E5E7EB",
-                                    fontSize: 15, 
-                                    color: "#6c757d",
-                                    lineHeight: 1.5
-                                  }}>
-                                    {cvSecretPrompt}
+                              {editingSection === 'cv-review' ? (
+                                <>
+                                  {/* Editable CV Screening */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>CV Screening</label>
+                                    <select
+                                      value={editFormData.screeningSetting}
+                                      onChange={(e) => setEditFormData({ ...editFormData, screeningSetting: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none"
+                                      }}
+                                    >
+                                      <option value="">Select screening type</option>
+                                      <option value="manual">Manual Review</option>
+                                      <option value="ai">AI Screening</option>
+                                      <option value="both">Both Manual and AI</option>
+                                    </select>
                                   </div>
-                                </div>
+                                  
+                                  {/* Editable CV Secret Prompt */}
+                                  <div>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>CV Secret Prompt</label>
+                                    <textarea
+                                      value={editFormData.cvSecretPrompt}
+                                      onChange={(e) => setEditFormData({ ...editFormData, cvSecretPrompt: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        minHeight: "80px",
+                                        padding: "12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none",
+                                        resize: "vertical"
+                                      }}
+                                      placeholder="Enter CV screening instructions for AI"
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt ? 16 : 0, borderBottom: cvSecretPrompt ? "1px solid #E5E7EB" : "none" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Screening</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{screeningSetting || "Not specified"}</span>
+                                  </div>
+                                  {cvSecretPrompt && (
+                                    <div>
+                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Secret Prompt</span>
+                                      <div style={{ 
+                                        padding: "12px", 
+                                        backgroundColor: "#F9FAFB", 
+                                        borderRadius: "6px",
+                                        border: "1px solid #E5E7EB",
+                                        fontSize: 15, 
+                                        color: "#6c757d",
+                                        lineHeight: 1.5
+                                      }}>
+                                        {cvSecretPrompt}
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
@@ -1461,58 +1839,124 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                         {
                           id: "step3",
                           title: "AI Interview",
+                          onEdit: () => startEditing('ai-interview'),
                           content: (
                             <div style={{ display: "flex", flexDirection: "column" }}>
-                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Screening</span>
-                                <span style={{ fontSize: 15, color: "#6c757d" }}>{aiInterviewScreening || "Not specified"}</span>
-                              </div>
-                              <div style={{ paddingBottom: 16, marginBottom: aiSecretPrompt ? 16 : (questions.length > 0 ? 16 : 0), borderBottom: (aiSecretPrompt || questions.length > 0) ? "1px solid #E5E7EB" : "none" }}>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Require Video</span>
-                                <span style={{ fontSize: 15, color: "#6c757d" }}>{requireVideo ? "Yes" : "No"}</span>
-                              </div>
-                              {aiSecretPrompt && (
-                                <div style={{ paddingBottom: 16, marginBottom: questions.length > 0 ? 16 : 0, borderBottom: questions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Secret Prompt</span>
-                                  <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }}>
-                                    {aiSecretPrompt}
+                              {editingSection === 'ai-interview' ? (
+                                <>
+                                  {/* Editable AI Interview Screening */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>AI Interview Screening</label>
+                                    <select
+                                      value={editFormData.aiInterviewScreening}
+                                      onChange={(e) => setEditFormData({ ...editFormData, aiInterviewScreening: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none"
+                                      }}
+                                    >
+                                      <option value="">Select screening level</option>
+                                      <option value="Good Fit and above">Good Fit and above</option>
+                                      <option value="Only Strong Fit">Only Strong Fit</option>
+                                      <option value="No Automatic Promotion">No Automatic Promotion</option>
+                                    </select>
                                   </div>
-                                </div>
-                              )}
-                              {questions.length > 0 && (
-                                <div>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                                    {questions.map((category, index) => (
-                                      <div key={index} style={{ 
-                                        paddingBottom: 16,
-                                        marginBottom: 16,
-                                        borderBottom: index < questions.length - 1 ? "1px solid #E5E7EB" : "none"
-                                      }}>
-                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>
-                                          {category.category}
-                                        </span>
-                                        {category.questions && category.questions.length > 0 ? (
-                                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                            {category.questions.map((q, qIndex) => (
-                                              <span key={qIndex} style={{ fontSize: 15, color: "#374151", lineHeight: 1.5 }}>
-                                                • {q.question}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <span style={{ fontSize: 15, color: "#6c757d" }}>No questions added</span>
-                                        )}
+
+                                  {/* Editable Require Video */}
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Require Video</label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "15px", color: "#181D27", cursor: "pointer" }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={editFormData.requireVideo}
+                                        onChange={(e) => setEditFormData({ ...editFormData, requireVideo: e.target.checked })}
+                                        style={{ marginRight: "8px" }}
+                                      />
+                                      Require video recording for interviews
+                                    </label>
+                                  </div>
+
+                                  {/* Editable AI Interview Secret Prompt */}
+                                  <div>
+                                    <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>AI Interview Secret Prompt</label>
+                                    <textarea
+                                      value={editFormData.aiSecretPrompt}
+                                      onChange={(e) => setEditFormData({ ...editFormData, aiSecretPrompt: e.target.value })}
+                                      style={{
+                                        width: "100%",
+                                        minHeight: "80px",
+                                        padding: "12px",
+                                        border: "1px solid #D1D5DB",
+                                        borderRadius: "6px",
+                                        fontSize: "15px",
+                                        outline: "none",
+                                        resize: "vertical"
+                                      }}
+                                      placeholder="Enter AI interview instructions and criteria"
+                                    />
+                                    <div style={{ fontSize: "13px", color: "#6B7280", marginTop: "4px" }}>
+                                      Note: Interview questions are generated automatically and cannot be edited here.
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Screening</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{aiInterviewScreening || "Not specified"}</span>
+                                  </div>
+                                  <div style={{ paddingBottom: 16, marginBottom: aiSecretPrompt ? 16 : (questions.length > 0 ? 16 : 0), borderBottom: (aiSecretPrompt || questions.length > 0) ? "1px solid #E5E7EB" : "none" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Require Video</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{requireVideo ? "Yes" : "No"}</span>
+                                  </div>
+                                  {aiSecretPrompt && (
+                                    <div style={{ paddingBottom: 16, marginBottom: questions.length > 0 ? 16 : 0, borderBottom: questions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
+                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Secret Prompt</span>
+                                      <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }}>
+                                        {aiSecretPrompt}
                                       </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {questions.length === 0 && (
-                                <div>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>No interview questions configured</span>
-                                </div>
+                                    </div>
+                                  )}
+                                  {questions.length > 0 && (
+                                    <div>
+                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                        {questions.map((category, index) => (
+                                          <div key={index} style={{ 
+                                            paddingBottom: 16,
+                                            marginBottom: 16,
+                                            borderBottom: index < questions.length - 1 ? "1px solid #E5E7EB" : "none"
+                                          }}>
+                                            <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>
+                                              {category.category}
+                                            </span>
+                                            {category.questions && category.questions.length > 0 ? (
+                                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                                {category.questions.map((q, qIndex) => (
+                                                  <span key={qIndex} style={{ fontSize: 15, color: "#374151", lineHeight: 1.5 }}>
+                                                    • {q.question}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <span style={{ fontSize: 15, color: "#6c757d" }}>No questions added</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {questions.length === 0 && (
+                                    <div>
+                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
+                                      <span style={{ fontSize: 15, color: "#6c757d" }}>No interview questions configured</span>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
@@ -1520,6 +1964,53 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                       ]}
                       allowMultiple={true}
                     />
+
+                    {/* Edit Control Buttons */}
+                    {editingSection && (
+                      <div style={{ 
+                        marginTop: "20px", 
+                        padding: "16px", 
+                        backgroundColor: "#F9FAFB", 
+                        borderRadius: "8px", 
+                        border: "1px solid #E5E7EB",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "12px"
+                      }}>
+                        <button
+                          onClick={cancelEditing}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#F3F4F6",
+                            color: "#374151",
+                            border: "1px solid #D1D5DB",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                            outline: "none"
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={saveEditing}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#059669",
+                            color: "white",
+                            border: "1px solid #059669",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                            outline: "none"
+                          }}
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
