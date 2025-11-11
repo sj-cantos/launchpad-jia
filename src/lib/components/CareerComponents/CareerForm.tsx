@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import InterviewQuestionGeneratorV2 from "./InterviewQuestionGeneratorV2";
 import RichTextEditor from "@/lib/components/CareerComponents/RichTextEditor";
 import CustomDropdown from "@/lib/components/CareerComponents/CustomDropdown";
@@ -84,57 +84,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   const [aiInterviewScreening, setAiInterviewScreening] = useState(career?.aiInterviewScreening || "Good Fit and above");
   const [aiSecretPrompt, setAiSecretPrompt] = useState(career?.aiSecretPrompt || "");
 
-  // Pipeline settings
-  const [pipelineStages, setPipelineStages] = useState(career?.pipelineStages || [
-    {
-      id: 1,
-      name: "CV Screening",
-      type: "core",
-      color: "#6B7280",
-      locked: true,
-      substages: [
-        { id: 11, name: "Waiting Submission", canEdit: false, canDelete: false },
-        { id: 12, name: "For Review", canEdit: false, canDelete: false }
-      ]
-    },
-    {
-      id: 2,
-      name: "AI Interview",
-      type: "core",
-      color: "#6B7280",
-      locked: true,
-      substages: [
-        { id: 21, name: "Waiting Interview", canEdit: false, canDelete: false },
-        { id: 22, name: "For Review", canEdit: false, canDelete: false }
-      ]
-    },
-    {
-      id: 3,
-      name: "Final Human Interview",
-      type: "core",
-      color: "#DC2626",
-      locked: false,
-      substages: [
-        { id: 31, name: "Waiting Schedule", canEdit: true, canDelete: false },
-        { id: 32, name: "Waiting Interview", canEdit: true, canDelete: false },
-        { id: 33, name: "For Review", canEdit: true, canDelete: false }
-      ]
-    },
-    {
-      id: 4,
-      name: "Job Offer",
-      type: "core",
-      color: "#059669",
-      locked: false,
-      substages: [
-        { id: 41, name: "For Final Review", canEdit: true, canDelete: false },
-        { id: 42, name: "Waiting Offer Acceptance", canEdit: true, canDelete: false },
-        { id: 43, name: "For Contract Signing", canEdit: true, canDelete: false },
-        { id: 44, name: "Hired", canEdit: true, canDelete: false }
-      ]
-    }
-  ]);
-
   const [questions, setQuestions] = useState(career?.questions || [
     {
       id: 1,
@@ -181,26 +130,10 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   const [isDraft, setIsDraft] = useState(false);
 
   // Stepper state
-  const steps = ["Career Details & Team Access", "CV Review", "AI Interview", "Pipeline", "Review"];
-  const stepIcons = ["la la-briefcase", "la la-clipboard-list", "la la-robot", "la la-filter", "la la-eye"];
+  const steps = ["Career Details", "CV Review", "AI Interview", "Review"];
+  const stepIcons = ["la la-briefcase", "la la-clipboard-list", "la la-robot", "la la-eye"];
   const [currentStep, setCurrentStep] = useState(0); // 0-indexed
   const stepStatus = ["Completed", "Pending", "In Progress"];
-
-  // Team Access state
-  const [orgMembers, setOrgMembers] = useState<any[]>([]);
-  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
-  const [memberSearchQuery, setMemberSearchQuery] = useState("");
-  const [openRoleDropdown, setOpenRoleDropdown] = useState<string | null>(null);
-  const [selectedTeamMembers, setSelectedTeamMembers] = useState<any[]>([
-    {
-      _id: user?.uid,
-      name: user?.displayName || user?.name,
-      email: user?.email,
-      image: user?.photoURL || user?.image,
-      role: "Job Owner",
-      isCurrentUser: true
-    }
-  ]);
 
   const isFormValid = () => {
     // For step 1, only require basic fields
@@ -222,26 +155,12 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
     return stepStatus[1]; // Pending
   };
 
-  // Ensure current user is in team access
-  useEffect(() => {
-    if (user && !selectedTeamMembers.some(m => m.email === user.email)) {
-      setSelectedTeamMembers([{
-        _id: user?.uid,
-        name: user?.displayName || user?.name,
-        email: user?.email,
-        image: user?.photoURL || user?.image,
-        role: "Job Owner",
-        isCurrentUser: true
-      }]);
-    }
-  }, [user]);
-
   // Fetch organization members
   useEffect(() => {
     const fetchMembers = async () => {
       try {
         const response = await axios.post("/api/fetch-members", { orgID });
-        setOrgMembers(response.data || []);
+        // Organization members fetched but not used for team access anymore
       } catch (error) {
         console.error("Error fetching members:", error);
       }
@@ -254,72 +173,14 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showMemberDropdown && !target.closest('.member-dropdown-container')) {
-        setShowMemberDropdown(false);
-      }
-      if (openRoleDropdown && !target.closest('.role-dropdown-container')) {
-        setOpenRoleDropdown(null);
-      }
+      // Keep basic click outside handling for any other dropdowns
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMemberDropdown, openRoleDropdown]);
-
-  // Role options with descriptions
-  const roleOptions = [
-    {
-      value: "Job Owner",
-      label: "Job Owner",
-      description: "Leads the hiring process for assigned jobs. Has access with all career settings."
-    },
-    {
-      value: "Contributor",
-      label: "Contributor",
-      description: "Helps evaluate candidates and assist with hiring tasks. Can move candidates through the pipeline, but cannot change any career settings."
-    },
-    {
-      value: "Reviewer",
-      label: "Reviewer",
-      description: "Reviews candidates and provides feedback. Can only view candidate profiles and comment."
-    }
-  ];
-
-  // Filter members for dropdown (exclude already added members)
-  const availableMembers = orgMembers.filter(
-    (member) => !selectedTeamMembers.some((tm) => tm.email === member.email)
-  ).filter((member) =>
-    member.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
-  );
-
-  const addTeamMember = (member: any) => {
-    setSelectedTeamMembers([...selectedTeamMembers, {
-      ...member,
-      role: "Contributor",
-      isCurrentUser: false
-    }]);
-    setShowMemberDropdown(false);
-    setMemberSearchQuery("");
-  };
-
-  const removeMember = (memberId: string) => {
-    const member = selectedTeamMembers.find(m => m._id === memberId);
-    if (member?.isCurrentUser) {
-      errorToast("You cannot remove yourself from the team", 1300);
-      return;
-    }
-    setSelectedTeamMembers(selectedTeamMembers.filter(m => m._id !== memberId));
-  };
-
-  const updateMemberRole = (memberId: string, newRole: string) => {
-    setSelectedTeamMembers(selectedTeamMembers.map(member =>
-      member._id === memberId ? { ...member, role: newRole } : member
-    ));
-  };
+  }, []);
 
   const updateCareer = async (status: string) => {
     if (Number(minimumSalary) && Number(maximumSalary) && Number(minimumSalary) > Number(maximumSalary)) {
@@ -347,7 +208,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       aiSecretPrompt,
       requireVideo,
       salaryNegotiable,
-      pipelineStages,
       minimumSalary: isNaN(Number(minimumSalary)) ? null : Number(minimumSalary),
       maximumSalary: isNaN(Number(maximumSalary)) ? null : Number(maximumSalary),
       country,
@@ -454,7 +314,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       };
 
       // Determine status based on current step
-      const careerStatus = currentStep === 4 ? "active" : "draft";
+      const careerStatus = currentStep === 3 ? "active" : "draft";
 
       if (savedCareerId) {
         // Update existing career
@@ -474,7 +334,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           aiSecretPrompt,
           requireVideo,
           salaryNegotiable,
-          pipelineStages,
           minimumSalary: isNaN(Number(minimumSalary)) ? null : Number(minimumSalary),
           maximumSalary: isNaN(Number(maximumSalary)) ? null : Number(maximumSalary),
           country,
@@ -486,7 +345,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
         const response = await axios.post("/api/update-career", updatedCareer);
         
         // If publishing (last step), show success message and redirect
-        if (currentStep === 4 && response.status === 200) {
+        if (currentStep === 3 && response.status === 200) {
           candidateActionToast(
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#181D27" }}>Career published successfully</span>
@@ -517,7 +376,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           orgID,
           requireVideo,
           salaryNegotiable,
-          pipelineStages,
           minimumSalary: isNaN(Number(minimumSalary)) ? null : Number(minimumSalary),
           maximumSalary: isNaN(Number(maximumSalary)) ? null : Number(maximumSalary),
           country,
@@ -533,7 +391,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           setIsDraft(careerStatus === "draft");
           
           // If publishing (last step), show success message and redirect
-          if (currentStep === 4) {
+          if (currentStep === 3) {
             candidateActionToast(
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 8 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#181D27" }}>Career published successfully</span>
@@ -596,7 +454,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           aiSecretPrompt,
           requireVideo,
           salaryNegotiable,
-          pipelineStages,
           minimumSalary: isNaN(Number(minimumSalary)) ? null : Number(minimumSalary),
           maximumSalary: isNaN(Number(maximumSalary)) ? null : Number(maximumSalary),
           country,
@@ -643,7 +500,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
         orgID,
         requireVideo,
         salaryNegotiable,
-        pipelineStages,
         minimumSalary: isNaN(Number(minimumSalary)) ? null : Number(minimumSalary),
         maximumSalary: isNaN(Number(maximumSalary)) ? null : Number(maximumSalary),
         country,
@@ -723,7 +579,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
             <button
               disabled={isSavingCareer}
               style={{ width: "fit-content", background: isSavingCareer ? "#D5D7DA" : "black", color: "#fff", border: "1px solid #E9EAEB", padding: "8px 16px", borderRadius: "60px", cursor: isSavingCareer ? "not-allowed" : "pointer", whiteSpace: "nowrap" }} onClick={continueToNextStep}>
-              {currentStep === 4 ? "Publish" : "Save and Continue"}
+              {currentStep === 3 ? "Publish" : "Save and Continue"}
             </button>
           </div>
         </div>) : (
@@ -816,7 +672,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
 
         <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "100%", gap: 24, alignItems: "flex-start" }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Step 1: Career Details & Team Access */}
+            {/* Step 1: Career Details */}
             {currentStep === 0 && (
               <>
                 {/* 1. Career Information Card */}
@@ -1124,289 +980,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                   </div>
                 </div>
 
-                {/* 3. Team Access Card */}
-                <div className="layered-card-outer">
-                  <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>3. Team Access</span>
-                    </div>
-                    <div className="layered-card-content">
-                      {/* Add Member Section - Horizontal Layout */}
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
-                        {/* Labels */}
-                        <div style={{ flex: 2 }}>
-                          <span style={{ fontSize: 14, color: "#181D27", fontWeight: 600, display: "block", marginBottom: 4 }}>Add more members</span>
-                          <span style={{ fontSize: 13, color: "#6c757d", display: "block" }}>You can add other members to collaborate on this career.</span>
-                        </div>
-
-                        {/* Add Member Dropdown - 1/3 width */}
-                        <div className="member-dropdown-container" style={{ position: "relative", flex: 1 }}>
-                          {/* Dropdown Button */}
-                          <div
-                            onClick={() => setShowMemberDropdown(!showMemberDropdown)}
-                            style={{
-                              width: "100%",
-                              padding: "10px 16px",
-                              border: "1px solid #D5D7DA",
-                              borderRadius: "8px",
-                              backgroundColor: "#fff",
-                              color: "#9CA3AF",
-                              fontSize: 14,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <i className="la la-user-plus" style={{ fontSize: 16 }}></i>
-                              <span>Add member</span>
-                            </div>
-                            <i className={`la la-angle-${showMemberDropdown ? 'up' : 'down'}`} style={{ fontSize: 16 }}></i>
-                          </div>
-
-                          {/* Dropdown Panel */}
-                          {showMemberDropdown && (
-                            <div style={{
-                              position: "absolute",
-                              bottom: "100%",
-                              left: 0,
-                              width: "450px",
-                              marginBottom: 4,
-                              backgroundColor: "#fff",
-                              border: "1px solid #E5E7EB",
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                              zIndex: 10,
-                              overflow: "hidden"
-                            }}>
-                              {/* Search Field */}
-                              <div style={{ padding: "12px", borderBottom: "1px solid #E5E7EB" }}>
-                                <div style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 8,
-                                  padding: "8px 12px",
-                                  backgroundColor: "#F9FAFB",
-                                  borderRadius: "6px",
-                                  border: "1px solid #E5E7EB"
-                                }}>
-                                  <i className="la la-search" style={{ fontSize: 16, color: "#9CA3AF" }}></i>
-                                  <input
-                                    type="text"
-                                    placeholder="Search member"
-                                    value={memberSearchQuery}
-                                    onChange={(e) => setMemberSearchQuery(e.target.value)}
-                                    autoFocus
-                                    style={{
-                                      flex: 1,
-                                      border: "none",
-                                      outline: "none",
-                                      fontSize: 14,
-                                      color: "#414651",
-                                      backgroundColor: "transparent"
-                                    }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Member List */}
-                              <div style={{ maxHeight: "240px", overflowY: "auto" }}>
-                                {availableMembers.length > 0 ? (
-                                  availableMembers.map((member) => (
-                                    <div
-                                      key={member._id}
-                                      onClick={() => addTeamMember(member)}
-                                      style={{
-                                        padding: "12px 16px",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 12,
-                                        borderBottom: "1px solid #F3F4F6",
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = "#F9FAFB";
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = "#fff";
-                                      }}
-                                    >
-                                      <img
-                                        src={member.image}
-                                        alt={member.name}
-                                        style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-                                      />
-                                      <div style={{ flex: 1, display: "flex", flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 }}>
-                                        <span style={{ fontSize: 14, fontWeight: 500, color: "#181D27", whiteSpace: "nowrap" }}>{member.name}</span>
-                                        <span style={{ fontSize: 13, color: "#6c757d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>• {member.email}</span>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div style={{
-                                    padding: "20px 16px",
-                                    textAlign: "center",
-                                    color: "#6c757d",
-                                    fontSize: 13
-                                  }}>
-                                    {memberSearchQuery ? "No members found" : "No available members"}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Selected Team Members List */}
-                      {selectedTeamMembers.map((member, memberIndex) => (
-                        <div
-                          key={member._id || member.email || memberIndex}
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 16,
-                            padding: "12px 16px",
-                            backgroundColor: "#fff",
-                            borderRadius: "8px",
-                            marginBottom: 12,
-                            border: "1px solid #E5E7EB"
-                          }}
-                        >
-                          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, flex: 3 }}>
-                            <img
-                              src={member.image || "/default-avatar.png"}
-                              alt={member.name}
-                              style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                            <div style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: "50%",
-                              backgroundColor: "#F3F4F6",
-                              display: "none",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0
-                            }}>
-                              <i className="la la-user" style={{ fontSize: 20, color: "#6B7280" }}></i>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-                              <span style={{ fontSize: 14, fontWeight: 500, color: "#181D27", whiteSpace: "nowrap" }}>
-                                {member.name}
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-                            {/* Custom Role Dropdown */}
-                            <div className="role-dropdown-container" style={{ position: "relative", width: "100%" }}>
-                              <div
-                                onClick={() => setOpenRoleDropdown(openRoleDropdown === member._id ? null : member._id)}
-                                style={{
-                                  width: "230px",
-                                  padding: "8px 12px",
-                                  border: "1px solid #D5D7DA",
-                                  borderRadius: "6px",
-                                  fontSize: 13,
-                                  color: "#414651",
-                                  backgroundColor: "#fff",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between"
-                                }}
-                              >
-                                <span>{member.role}</span>
-                                <i className={`la la-angle-${openRoleDropdown === member._id ? 'up' : 'down'}`} style={{ fontSize: 14 }}></i>
-                              </div>
-
-                              {/* Dropdown Panel */}
-                              {openRoleDropdown === member._id && (
-                                <div style={{
-                                  position: "absolute",
-                                  bottom: "100%",
-                                  left: 0,
-                                  width: "400px",
-                                  marginBottom: 4,
-                                  backgroundColor: "#fff",
-                                  border: "1px solid #E5E7EB",
-                                  borderRadius: "8px",
-                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                  zIndex: 100,
-                                  overflow: "hidden"
-                                }}>
-                                  {roleOptions.map((role) => (
-                                    <div
-                                      key={role.value}
-                                      onClick={() => {
-                                        updateMemberRole(member._id, role.value);
-                                        setOpenRoleDropdown(null);
-                                      }}
-                                      style={{
-                                        padding: "8px",
-                                        cursor: "pointer",
-                                        borderBottom: role.value !== roleOptions[roleOptions.length - 1].value ? "1px solid #F3F4F6" : "none",
-                                        backgroundColor: member.role === role.value ? "#F0F3FF" : "#fff"
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        if (member.role !== role.value) {
-                                          e.currentTarget.style.backgroundColor = "#F9FAFB";
-                                        }
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = member.role === role.value ? "#F0F3FF" : "#fff";
-                                      }}
-                                    >
-                                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontSize: 10, fontWeight: 600, color: "#181D27", marginBottom: 2 }}>
-                                            {role.label}
-                                          </div>
-                                          <div style={{ fontSize: 8, color: "#717680", lineHeight: "18px" }}>
-                                            {role.description}
-                                          </div>
-                                        </div>
-                                        {member.role === role.value && (
-                                          <i className="la la-check" style={{ fontSize: 18, color: "#5B7FFF", marginLeft: 4 }}></i>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <button
-                              onClick={() => removeMember(member._id)}
-                              style={{
-                                width: 32,
-                                height: 32,
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                color: "#D1D5DB",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center"
-                              }}
-                            >
-                              <i className="la la-trash" style={{ fontSize: 20 }}></i>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-
-                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>*Admins can view all careers regardless of specific access settings.</span>
-                    </div>
-                  </div>
-                </div>
               </>
             )}
 
@@ -1704,236 +1277,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
               </>
             )}
 
-            {/* Step 4: Pipeline */}
+            {/* Step 4: Review */}
             {currentStep === 3 && (
-              <>
-                <div className="layered-card-outer">
-                  <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>Customize pipeline stages</span>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12 }}>
-                        <button
-                          style={{
-                            background: "transparent",
-                            color: "#6c757d",
-                            border: "1px solid #D1D5DB",
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: 13,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6
-                          }}
-                          onClick={() => {
-                            // Reset to default pipeline
-                            setPipelineStages([
-                              {
-                                id: 1,
-                                name: "CV Screening",
-                                type: "core",
-                                color: "#6B7280",
-                                locked: true,
-                                substages: [
-                                  { id: 11, name: "Waiting Submission", canEdit: false, canDelete: false },
-                                  { id: 12, name: "For Review", canEdit: false, canDelete: false }
-                                ]
-                              },
-                              {
-                                id: 2,
-                                name: "AI Interview",
-                                type: "core",
-                                color: "#6B7280",
-                                locked: true,
-                                substages: [
-                                  { id: 21, name: "Waiting Interview", canEdit: false, canDelete: false },
-                                  { id: 22, name: "For Review", canEdit: false, canDelete: false }
-                                ]
-                              },
-                              {
-                                id: 3,
-                                name: "Final Human Interview",
-                                type: "core",
-                                color: "#DC2626",
-                                locked: false,
-                                substages: [
-                                  { id: 31, name: "Waiting Schedule", canEdit: true, canDelete: false },
-                                  { id: 32, name: "Waiting Interview", canEdit: true, canDelete: false },
-                                  { id: 33, name: "For Review", canEdit: true, canDelete: false }
-                                ]
-                              },
-                              {
-                                id: 4,
-                                name: "Job Offer",
-                                type: "core",
-                                color: "#059669",
-                                locked: false,
-                                substages: [
-                                  { id: 41, name: "For Final Review", canEdit: true, canDelete: false },
-                                  { id: 42, name: "Waiting Offer Acceptance", canEdit: true, canDelete: false },
-                                  { id: 43, name: "For Contract Signing", canEdit: true, canDelete: false },
-                                  { id: 44, name: "Hired", canEdit: true, canDelete: false }
-                                ]
-                              }
-                            ]);
-                          }}
-                        >
-                          <i className="la la-undo" style={{ fontSize: 14 }}></i>
-                          Restore to default
-                        </button>
-                        <button
-                          style={{
-                            background: "transparent",
-                            color: "#6c757d",
-                            border: "1px solid #D1D5DB",
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: 13,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6
-                          }}
-                        >
-                          Copy pipeline from existing job
-                          <i className="la la-angle-down" style={{ fontSize: 14 }}></i>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="layered-card-content">
-                      {/* Pipeline Stages */}
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-                        {pipelineStages.map((stage, index) => (
-                          <div key={stage.id} style={{ display: "flex", flexDirection: "column" }}>
-                            {/* Stage Header */}
-                            <div style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              marginBottom: 12,
-                              padding: "8px 12px",
-                              backgroundColor: "#F9FAFB",
-                              borderRadius: "8px",
-                              border: "1px solid #E5E7EB"
-                            }}>
-                              <div style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                backgroundColor: stage.color
-                              }}></div>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: "#181D27", flex: 1 }}>
-                                {stage.name}
-                              </span>
-                              {stage.locked && (
-                                <i className="la la-lock" style={{ fontSize: 12, color: "#9CA3AF" }}></i>
-                              )}
-                            </div>
-
-                            {/* Substages */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                              <span style={{ fontSize: 12, color: "#6c757d", marginBottom: 4 }}>Substages</span>
-                              {stage.substages.map((substage) => (
-                                <div key={substage.id} style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
-                                  padding: "8px 12px",
-                                  backgroundColor: "#FFFFFF",
-                                  border: "1px solid #E5E7EB",
-                                  borderRadius: "6px",
-                                  fontSize: 13,
-                                  color: "#374151"
-                                }}>
-                                  <span style={{ flex: 1 }}>{substage.name}</span>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                    {substage.canEdit && (
-                                      <button
-                                        style={{
-                                          background: "none",
-                                          border: "none",
-                                          cursor: "pointer",
-                                          color: "#6B7280",
-                                          padding: "2px"
-                                        }}
-                                        onClick={() => {
-                                          // Edit substage functionality
-                                          const newName = prompt("Edit substage name:", substage.name);
-                                          if (newName && newName.trim()) {
-                                            const updatedStages = [...pipelineStages];
-                                            const stageIndex = updatedStages.findIndex(s => s.id === stage.id);
-                                            const substageIndex = updatedStages[stageIndex].substages.findIndex(ss => ss.id === substage.id);
-                                            updatedStages[stageIndex].substages[substageIndex].name = newName.trim();
-                                            setPipelineStages(updatedStages);
-                                          }
-                                        }}
-                                      >
-                                        <i className="la la-edit" style={{ fontSize: 12 }}></i>
-                                      </button>
-                                    )}
-                                    <button
-                                      style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        color: "#6B7280",
-                                        padding: "2px"
-                                      }}
-                                    >
-                                      <i className="la la-grip-vertical" style={{ fontSize: 12 }}></i>
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-
-                              {/* Add New Substage Button */}
-                              <button
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 6,
-                                  padding: "8px 12px",
-                                  backgroundColor: "transparent",
-                                  border: "1px dashed #D1D5DB",
-                                  borderRadius: "6px",
-                                  cursor: "pointer",
-                                  fontSize: 13,
-                                  color: "#6B7280"
-                                }}
-                                onClick={() => {
-                                  const newSubstageName = prompt("Enter new substage name:");
-                                  if (newSubstageName && newSubstageName.trim()) {
-                                    const updatedStages = [...pipelineStages];
-                                    const stageIndex = updatedStages.findIndex(s => s.id === stage.id);
-                                    const newSubstage = {
-                                      id: Date.now(), // Simple ID generation
-                                      name: newSubstageName.trim(),
-                                      canEdit: true,
-                                      canDelete: true
-                                    };
-                                    updatedStages[stageIndex].substages.push(newSubstage);
-                                    setPipelineStages(updatedStages);
-                                  }
-                                }}
-                              >
-                                <i className="la la-plus" style={{ fontSize: 12 }}></i>
-                                Add new stage
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Step 5: Review */}
-            {currentStep === 4 && (
               <>
                 <div style={{ 
                   display: "flex", 
@@ -1948,61 +1293,67 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                       items={[
                         {
                           id: "step1",
-                          title: "Career Details & Team Access",
+                          title: "Career Details",
                           content: (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                            <div style={{ display: "flex", flexDirection: "column" }}>
                               {/* Job Title */}
-                              <div>
+                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Title</span>
                                 <span style={{ fontSize: 15, color: "#6c757d" }}>{jobTitle || "Not specified"}</span>
                               </div>
 
                               {/* Employment Type & Work Setup */}
-                              <div style={{ display: "flex", gap: 20 }}>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Employment Type</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{employmentType || "Not specified"}</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Arrangement</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetup || "Not specified"}</span>
+                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                <div style={{ display: "flex", gap: 20 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Employment Type</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{employmentType || "Not specified"}</span>
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Work Arrangement</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetup || "Not specified"}</span>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Location */}
-                              <div style={{ display: "flex", gap: 20 }}>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Country</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{country || "Not specified"}</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>State / Province</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{province || "Not specified"}</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>City</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{city || "Not specified"}</span>
+                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                <div style={{ display: "flex", gap: 20 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Country</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{country || "Not specified"}</span>
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>State / Province</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{province || "Not specified"}</span>
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>City</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{city || "Not specified"}</span>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Salary */}
-                              <div style={{ display: "flex", gap: 20 }}>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Minimum Salary</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>₱{minimumSalary || "0"} PHP</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Maximum Salary</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>₱{maximumSalary || "0"} PHP</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Negotiable</span>
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>{salaryNegotiable ? "Yes" : "No"}</span>
+                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
+                                <div style={{ display: "flex", gap: 20 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Minimum Salary</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>₱{minimumSalary || "0"} PHP</span>
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Maximum Salary</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>₱{maximumSalary || "0"} PHP</span>
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Negotiable</span>
+                                    <span style={{ fontSize: 15, color: "#6c757d" }}>{salaryNegotiable ? "Yes" : "No"}</span>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Job Description */}
-                              <div>
+                              <div style={{ paddingBottom: 16, marginBottom: workSetupRemarks ? 16 : 0, borderBottom: workSetupRemarks ? "1px solid #E5E7EB" : "none" }}>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Job Description</span>
                                 <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: description || "No description provided" }}></div>
                               </div>
@@ -2014,28 +1365,6 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                   <span style={{ fontSize: 15, color: "#6c757d" }}>{workSetupRemarks}</span>
                                 </div>
                               )}
-
-                              {/* Team Access */}
-                              <div>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Team Access</span>
-                                {selectedTeamMembers.length > 0 ? (
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                    {selectedTeamMembers.map((member, index) => (
-                                      <div key={index} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                        <img
-                                          src={member.image || "/default-avatar.png"}
-                                          alt={member.name}
-                                          style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }}
-                                        />
-                                        <span style={{ fontSize: 15, color: "#181D27" }}>{member.name}</span>
-                                        <span style={{ fontSize: 15, color: "#6c757d" }}>({member.role})</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span style={{ fontSize: 15, color: "#6c757d" }}>No additional team members added</span>
-                                )}
-                              </div>
                             </div>
                           )
                         },
@@ -2043,8 +1372,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                           id: "step2",
                           title: "CV Review",
                           content: (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                              <div>
+                            <div style={{ display: "flex", flexDirection: "column" }}>
+                              <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt ? 16 : 0, borderBottom: cvSecretPrompt ? "1px solid #E5E7EB" : "none" }}>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Screening</span>
                                 <span style={{ fontSize: 15, color: "#6c757d" }}>{screeningSetting || "Not specified"}</span>
                               </div>
@@ -2071,52 +1400,40 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                           id: "step3",
                           title: "AI Interview",
                           content: (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                              <div>
+                            <div style={{ display: "flex", flexDirection: "column" }}>
+                              <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Screening</span>
                                 <span style={{ fontSize: 15, color: "#6c757d" }}>{aiInterviewScreening || "Not specified"}</span>
                               </div>
-                              <div>
+                              <div style={{ paddingBottom: 16, marginBottom: aiSecretPrompt ? 16 : (questions.length > 0 ? 16 : 0), borderBottom: (aiSecretPrompt || questions.length > 0) ? "1px solid #E5E7EB" : "none" }}>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>Require Video</span>
                                 <span style={{ fontSize: 15, color: "#6c757d" }}>{requireVideo ? "Yes" : "No"}</span>
                               </div>
                               {aiSecretPrompt && (
-                                <div>
+                                <div style={{ paddingBottom: 16, marginBottom: questions.length > 0 ? 16 : 0, borderBottom: questions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
                                   <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>AI Interview Secret Prompt</span>
-                                  <div style={{ 
-                                    padding: "12px", 
-                                    backgroundColor: "#F9FAFB", 
-                                    borderRadius: "6px",
-                                    border: "1px solid #E5E7EB",
-                                    fontSize: 15, 
-                                    color: "#6c757d",
-                                    lineHeight: 1.5
-                                  }}>
+                                  <div style={{ fontSize: 15, color: "#6c757d", lineHeight: 1.5 }}>
                                     {aiSecretPrompt}
                                   </div>
                                 </div>
                               )}
-                              <div>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
-                                {questions.length > 0 ? (
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                              {questions.length > 0 && (
+                                <div>
+                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                                     {questions.map((category, index) => (
                                       <div key={index} style={{ 
-                                        padding: "12px", 
-                                        backgroundColor: "#F9FAFB", 
-                                        borderRadius: "6px",
-                                        border: "1px solid #E5E7EB"
+                                        paddingBottom: 16,
+                                        marginBottom: 16,
+                                        borderBottom: index < questions.length - 1 ? "1px solid #E5E7EB" : "none"
                                       }}>
-                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>
                                           {category.category}
                                         </span>
-                                        <span style={{ fontSize: 15, color: "#6c757d", display: "block", marginBottom: 8 }}>
-                                          Questions to ask: {category.questionCountToAsk || "All"}
-                                        </span>
                                         {category.questions && category.questions.length > 0 ? (
-                                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                             {category.questions.map((q, qIndex) => (
-                                              <span key={qIndex} style={{ fontSize: 15, color: "#374151" }}>
+                                              <span key={qIndex} style={{ fontSize: 15, color: "#374151", lineHeight: 1.5 }}>
                                                 • {q.question}
                                               </span>
                                             ))}
@@ -2127,52 +1444,14 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                       </div>
                                     ))}
                                   </div>
-                                ) : (
+                                </div>
+                              )}
+                              {questions.length === 0 && (
+                                <div>
+                                  <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
                                   <span style={{ fontSize: 15, color: "#6c757d" }}>No interview questions configured</span>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        },
-                        {
-                          id: "step4",
-                          title: "Pipeline",
-                          content: (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                              <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Pipeline Stages</span>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                                {pipelineStages.map((stage, index) => (
-                                  <div key={stage.id} style={{ 
-                                    padding: "12px", 
-                                    backgroundColor: "#F9FAFB", 
-                                    borderRadius: "6px",
-                                    border: "1px solid #E5E7EB"
-                                  }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                                      <div style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: "50%",
-                                        backgroundColor: stage.color
-                                      }}></div>
-                                      <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27" }}>
-                                        {stage.name}
-                                      </span>
-                                      {stage.locked && (
-                                        <i className="la la-lock" style={{ fontSize: 12, color: "#9CA3AF" }}></i>
-                                      )}
-                                    </div>
-                                    <div style={{ marginLeft: 16 }}>
-                                      <span style={{ fontSize: 15, color: "#6c757d", display: "block", marginBottom: 4 }}>Substages:</span>
-                                      {stage.substages.map((substage) => (
-                                        <span key={substage.id} style={{ fontSize: 15, color: "#374151", display: "block" }}>
-                                          • {substage.name}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )
                         }

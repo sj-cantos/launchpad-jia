@@ -136,7 +136,7 @@ export default function JobDescription({ formData, setFormData, editModal, isEdi
                 items={[
                   {
                     id: "career-details",
-                    title: "Career Details & Team Access",
+                    title: "Career Details",
                     content: (
                       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                         {/* Job Title */}
@@ -335,50 +335,6 @@ export default function JobDescription({ formData, setFormData, editModal, isEdi
                             </div>
                           ) : (
                             <span style={{ fontSize: 15, color: "#6c757d" }}>No interview questions configured</span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  },
-                  {
-                    id: "pipeline",
-                    title: "Pipeline",
-                    content: (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Pipeline Stages</span>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {formData.pipelineStages && formData.pipelineStages.length > 0 ? formData.pipelineStages.map((stage: any, index: number) => (
-                            <div key={stage.id} style={{ 
-                              padding: "12px", 
-                              backgroundColor: "#F9FAFB", 
-                              borderRadius: "6px",
-                              border: "1px solid #E5E7EB"
-                            }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                                <div style={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: "50%",
-                                  backgroundColor: stage.color
-                                }}></div>
-                                <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27" }}>
-                                  {stage.name}
-                                </span>
-                                {stage.locked && (
-                                  <i className="la la-lock" style={{ fontSize: 12, color: "#9CA3AF" }}></i>
-                                )}
-                              </div>
-                              <div style={{ marginLeft: 16 }}>
-                                <span style={{ fontSize: 15, color: "#6c757d", display: "block", marginBottom: 4 }}>Substages:</span>
-                                {stage.substages && stage.substages.map((substage: any) => (
-                                  <span key={substage.id} style={{ fontSize: 15, color: "#374151", display: "block" }}>
-                                    • {substage.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )) : (
-                            <span style={{ fontSize: 15, color: "#6c757d" }}>No pipeline stages configured</span>
                           )}
                         </div>
                       </div>
