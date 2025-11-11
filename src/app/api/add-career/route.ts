@@ -45,6 +45,38 @@ const validateBoolean = (value: any, fieldName: string): boolean | undefined => 
   return value;
 };
 
+const validateUserObject = (value: any, fieldName: string): any => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${fieldName} must be an object`);
+  }
+  
+  const sanitizedUser: any = {};
+  
+  // Validate and sanitize required fields
+  if (value.name) {
+    sanitizedUser.name = sanitizeText(validateString(value.name, `${fieldName}.name`, 100));
+  }
+  if (value.email) {
+    sanitizedUser.email = sanitizeText(validateString(value.email, `${fieldName}.email`, 200));
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(sanitizedUser.email)) {
+      throw new Error(`${fieldName}.email must be a valid email address`);
+    }
+  }
+  if (value.image) {
+    sanitizedUser.image = sanitizeText(validateString(value.image, `${fieldName}.image`, 500));
+    // Basic URL validation for image
+    try {
+      new URL(sanitizedUser.image);
+    } catch {
+      throw new Error(`${fieldName}.image must be a valid URL`);
+    }
+  }
+  
+  return sanitizedUser;
+};
+
 const sanitizeHTML = (html: string): string => {
   return xss(html, {
     whiteList: {
@@ -104,14 +136,18 @@ export async function POST(request: Request) {
       country,
       province,
       employmentType,
+      cvSecretPrompt,
+      preScreeningQuestions,
+      aiInterviewScreening,
+      aiSecretPrompt,
     } = await request.json();
     
     // Input validation and sanitization
     let sanitizedJobTitle: string;
     let sanitizedDescription: string;
     let sanitizedQuestions: any;
-    let sanitizedLastEditedBy: string;
-    let sanitizedCreatedBy: string;
+    let sanitizedLastEditedBy: any;
+    let sanitizedCreatedBy: any;
     let sanitizedLocation: string;
     let sanitizedWorkSetup: string;
     let sanitizedWorkSetupRemarks: string | undefined;
@@ -123,6 +159,10 @@ export async function POST(request: Request) {
     let validatedMaximumSalary: number | undefined;
     let validatedSalaryNegotiable: boolean | undefined;
     let validatedRequireVideo: boolean | undefined;
+    let sanitizedCvSecretPrompt: string | undefined;
+    let sanitizedPreScreeningQuestions: any[] = [];
+    let sanitizedAiInterviewScreening: string | undefined;
+    let sanitizedAiSecretPrompt: string | undefined;
     
     try {
       // Validate and sanitize required fields
@@ -130,31 +170,66 @@ export async function POST(request: Request) {
       sanitizedDescription = sanitizeHTML(validateString(description, "Description", 10000));
       sanitizedLocation = sanitizeText(validateString(location, "Location", 100));
       sanitizedWorkSetup = sanitizeText(validateString(workSetup, "Work setup", 50));
-      sanitizedLastEditedBy = sanitizeText(validateString(lastEditedBy, "Last edited by", 100));
-      sanitizedCreatedBy = sanitizeText(validateString(createdBy, "Created by", 100));
+      sanitizedLastEditedBy = validateUserObject(lastEditedBy, "Last edited by");
+      sanitizedCreatedBy = validateUserObject(createdBy, "Created by");
       
       // Validate questions array
       if (!Array.isArray(questions)) {
         throw new Error("Questions must be an array");
       }
       if (questions.length === 0) {
-        throw new Error("At least one question is required");
+        throw new Error("At least one question category is required");
       }
       if (questions.length > 50) {
-        throw new Error("Maximum 50 questions allowed");
+        throw new Error("Maximum 50 question categories allowed");
       }
       
-      sanitizedQuestions = questions.map((question, index) => {
-        if (typeof question !== 'string') {
-          throw new Error(`Question ${index + 1} must be a string`);
+      // Handle structured questions format: [{ id, category, questionCountToAsk, questions: [...] }]
+      sanitizedQuestions = questions.map((questionCategory, index) => {
+        if (typeof questionCategory !== 'object' || questionCategory === null || Array.isArray(questionCategory)) {
+          throw new Error(`Question category ${index + 1} must be an object`);
         }
-        if (question.trim().length === 0) {
-          throw new Error(`Question ${index + 1} cannot be empty`);
+        
+        const sanitizedCategory: any = {};
+        
+        // Validate id (optional)
+        if (questionCategory.id !== undefined) {
+          sanitizedCategory.id = validateNumber(questionCategory.id, `Question category ${index + 1} id`) || questionCategory.id;
         }
-        if (question.length > 1000) {
-          throw new Error(`Question ${index + 1} exceeds maximum length of 1000 characters`);
+        
+        // Validate category (optional)
+        if (questionCategory.category) {
+          sanitizedCategory.category = sanitizeText(validateString(questionCategory.category, `Question category ${index + 1} category`, 200));
+        } else {
+          sanitizedCategory.category = "";
         }
-        return sanitizeText(question.trim());
+        
+        // Validate questionCountToAsk (optional)
+        if (questionCategory.questionCountToAsk !== undefined && questionCategory.questionCountToAsk !== null) {
+          sanitizedCategory.questionCountToAsk = validateNumber(questionCategory.questionCountToAsk, `Question category ${index + 1} questionCountToAsk`, 0, 1000);
+        } else {
+          sanitizedCategory.questionCountToAsk = null;
+        }
+        
+        // Validate questions array
+        if (!Array.isArray(questionCategory.questions)) {
+          throw new Error(`Question category ${index + 1} questions must be an array`);
+        }
+        
+        sanitizedCategory.questions = questionCategory.questions.map((question: any, qIndex: number) => {
+          if (typeof question !== 'string') {
+            throw new Error(`Question ${index + 1}.${qIndex + 1} must be a string`);
+          }
+          if (question.trim().length === 0) {
+            throw new Error(`Question ${index + 1}.${qIndex + 1} cannot be empty`);
+          }
+          if (question.length > 1000) {
+            throw new Error(`Question ${index + 1}.${qIndex + 1} exceeds maximum length of 1000 characters`);
+          }
+          return sanitizeText(question.trim());
+        });
+        
+        return sanitizedCategory;
       });
       
       // Validate and sanitize optional fields
@@ -202,6 +277,43 @@ export async function POST(request: Request) {
       // Validate ObjectId format for orgID
       if (!ObjectId.isValid(orgID)) {
         throw new Error("Invalid organization ID format");
+      }
+      
+      // Validate additional optional fields
+      if (cvSecretPrompt) {
+        sanitizedCvSecretPrompt = sanitizeText(validateString(cvSecretPrompt, "CV secret prompt", 2000));
+      }
+      
+      if (preScreeningQuestions && Array.isArray(preScreeningQuestions)) {
+        sanitizedPreScreeningQuestions = preScreeningQuestions.map((question: any, index: number) => {
+          if (typeof question === 'string') {
+            return sanitizeText(validateString(question, `Pre-screening question ${index + 1}`, 1000));
+          } else if (typeof question === 'object' && question !== null) {
+            // Handle structured pre-screening questions similar to questions
+            const sanitizedPreScreening: any = {};
+            if (question.question) {
+              sanitizedPreScreening.question = sanitizeText(validateString(question.question, `Pre-screening question ${index + 1}`, 1000));
+            }
+            if (question.type) {
+              sanitizedPreScreening.type = sanitizeText(validateString(question.type, `Pre-screening question ${index + 1} type`, 50));
+            }
+            if (question.options && Array.isArray(question.options)) {
+              sanitizedPreScreening.options = question.options.map((option: any, optIndex: number) => 
+                sanitizeText(validateString(option, `Pre-screening question ${index + 1} option ${optIndex + 1}`, 200))
+              );
+            }
+            return sanitizedPreScreening;
+          }
+          return question;
+        });
+      }
+      
+      if (aiInterviewScreening) {
+        sanitizedAiInterviewScreening = sanitizeText(validateString(aiInterviewScreening, "AI interview screening", 100));
+      }
+      
+      if (aiSecretPrompt) {
+        sanitizedAiSecretPrompt = sanitizeText(validateString(aiSecretPrompt, "AI secret prompt", 2000));
       }
       
     } catch (validationError) {
@@ -276,6 +388,10 @@ export async function POST(request: Request) {
       country: sanitizedCountry,
       province: sanitizedProvince,
       employmentType: sanitizedEmploymentType,
+      cvSecretPrompt: sanitizedCvSecretPrompt || "",
+      preScreeningQuestions: sanitizedPreScreeningQuestions,
+      aiInterviewScreening: sanitizedAiInterviewScreening || "",
+      aiSecretPrompt: sanitizedAiSecretPrompt || "",
     };
 
     const insertResult = await db.collection("careers").insertOne(career);
