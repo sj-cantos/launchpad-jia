@@ -5,6 +5,7 @@ import InterviewQuestionGeneratorV2 from "./InterviewQuestionGeneratorV2";
 import RichTextEditor from "@/lib/components/CareerComponents/RichTextEditor";
 import CustomDropdown from "@/lib/components/CareerComponents/CustomDropdown";
 import Accordion from "@/lib/components/CareerComponents/Accordion";
+import PreScreeningQuestions, { PreScreeningQuestion } from "@/lib/components/CareerComponents/PreScreeningQuestions";
 import philippineCitiesAndProvinces from "../../../../public/philippines-locations.json";
 import { candidateActionToast, errorToast } from "@/lib/Utils";
 import { useAppContext } from "@/lib/context/AppContext";
@@ -12,6 +13,7 @@ import axios from "axios";
 import CareerActionModal from "./CareerActionModal";
 import FullScreenLoadingAnimation from "./FullScreenLoadingAnimation";
 import { assetConstants } from "@/lib/utils/constantsV2";
+import { Tooltip } from "react-tooltip";
 
 // Add error border styles
 const errorBorderStyles = `
@@ -79,6 +81,9 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
 
   // CV Review settings
   const [cvSecretPrompt, setCvSecretPrompt] = useState(career?.cvSecretPrompt || "");
+
+  // Pre-screening questions
+  const [preScreeningQuestions, setPreScreeningQuestions] = useState<PreScreeningQuestion[]>(career?.preScreeningQuestions || []);
 
   // AI Interview settings
   const [aiInterviewScreening, setAiInterviewScreening] = useState(career?.aiInterviewScreening || "Good Fit and above");
@@ -151,6 +156,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
     city: "",
     screeningSetting: "",
     cvSecretPrompt: "",
+    preScreeningQuestions: [] as PreScreeningQuestion[],
     aiInterviewScreening: "",
     aiSecretPrompt: "",
     requireVideo: true
@@ -227,6 +233,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       updatedAt: Date.now(),
       screeningSetting,
       cvSecretPrompt,
+      preScreeningQuestions,
       aiInterviewScreening,
       aiSecretPrompt,
       requireVideo,
@@ -287,6 +294,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       city: city,
       screeningSetting: screeningSetting,
       cvSecretPrompt: cvSecretPrompt,
+      preScreeningQuestions: preScreeningQuestions,
       aiInterviewScreening: aiInterviewScreening,
       aiSecretPrompt: aiSecretPrompt,
       requireVideo: requireVideo
@@ -309,6 +317,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       city: "",
       screeningSetting: "",
       cvSecretPrompt: "",
+      preScreeningQuestions: [],
       aiInterviewScreening: "",
       aiSecretPrompt: "",
       requireVideo: true
@@ -331,6 +340,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       setCity(editFormData.city);
       setScreeningSetting(editFormData.screeningSetting);
       setCvSecretPrompt(editFormData.cvSecretPrompt);
+      setPreScreeningQuestions(editFormData.preScreeningQuestions);
       setAiInterviewScreening(editFormData.aiInterviewScreening);
       setAiSecretPrompt(editFormData.aiSecretPrompt);
       setRequireVideo(editFormData.requireVideo);
@@ -436,6 +446,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           updatedAt: Date.now(),
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           requireVideo,
@@ -477,6 +488,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           createdBy: userInfoSlice,
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           orgID,
@@ -556,6 +568,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
           updatedAt: Date.now(),
           screeningSetting,
           cvSecretPrompt,
+          preScreeningQuestions,
           aiInterviewScreening,
           aiSecretPrompt,
           requireVideo,
@@ -601,6 +614,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
         createdBy: userInfoSlice,
         screeningSetting,
         cvSecretPrompt,
+        preScreeningQuestions,
         aiInterviewScreening,
         aiSecretPrompt,
         orgID,
@@ -887,7 +901,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                             }}
                             screeningSetting={employmentType}
                             settingList={employmentTypeOptions}
-                            placeholder="Select Employment Type"
+                            placeholder="Choose Employment Type"
                           />
                         </div>
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -901,7 +915,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                             }}
                             screeningSetting={workSetup}
                             settingList={workSetupOptions}
-                            placeholder="Select Work Setup"
+                            placeholder="Choose Work Setup"
                             hasError={!!fieldErrors.workSetup}
                           />
                           {fieldErrors.workSetup && (
@@ -936,7 +950,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                             }}
                             screeningSetting={country}
                             settingList={[{ name: "Philippines" }]}
-                            placeholder="Select Country"
+                            placeholder="Choose Country"
                             hasError={!!fieldErrors.country}
                           />
                           {fieldErrors.country && (
@@ -960,7 +974,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                             }}
                             screeningSetting={province}
                             settingList={provinceList}
-                            placeholder="Choose state / province"
+                            placeholder="Choose province"
                             hasError={!!fieldErrors.province}
                           />
                           {fieldErrors.province && (
@@ -980,7 +994,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                             }}
                             screeningSetting={city}
                             settingList={cityList}
-                            placeholder="Select City"
+                            placeholder="Choose City"
                             hasError={!!fieldErrors.city}
                           />
                           {fieldErrors.city && (
@@ -1185,78 +1199,24 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                           <i className="la la-eye-slash" style={{ fontSize: 16, color: "#6c757d" }}></i>
                           <span style={{ fontSize: 15, color: "#181D27", fontWeight: 700 }}>CV Secret Prompt</span>
                           <span style={{ fontSize: 13, color: "#9CA3AF" }}>(optional)</span>
-                          <div style={{ position: "relative", display: "inline-block" }}>
-                            <div
-                              style={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                border: "1px solid #9CA3AF",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "help",
-                                fontSize: 10,
-                                color: "#9CA3AF",
-                                fontWeight: "bold"
-                              }}
-                              onMouseEnter={(e) => {
-                                const tooltip = e.currentTarget.querySelector('.custom-tooltip') as HTMLElement;
-                                if (tooltip) {
-                                  tooltip.style.visibility = 'visible';
-                                  tooltip.style.opacity = '1';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                const tooltip = e.currentTarget.querySelector('.custom-tooltip') as HTMLElement;
-                                if (tooltip) {
-                                  tooltip.style.visibility = 'hidden';
-                                  tooltip.style.opacity = '0';
-                                }
-                              }}
-                            >
-                              ?
-                              <div
-                                className="custom-tooltip"
-                                style={{
-                                  position: "absolute",
-                                  bottom: "100%",
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  marginBottom: "8px",
-                                  backgroundColor: "#23262cff",
-                                  color: "white",
-                                  padding: "6px 10px",
-                                  borderRadius: "6px",
-                                  fontSize: "11px",
-                                  lineHeight: "1.3",
-                                  maxWidth: "280px",
-                                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                                  visibility: "hidden",
-                                  opacity: "0",
-                                  transition: "opacity 0.2s, visibility 0.2s",
-                                  zIndex: 1000,
-                                  pointerEvents: "none"
-                                }}
-                              >
-                                These prompts remain hidden from candidates and the public job portal.
-                                <br />
-                                Additionally, only Admins and the Job Owner can view the secret prompt.
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    top: "100%",
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    width: 0,
-                                    height: 0,
-                                    borderLeft: "6px solid transparent",
-                                    borderRight: "6px solid transparent",
-                                    borderTop: "6px solid #23262cff"
-                                  }}
-                                />
-                              </div>
-                            </div>
+                          <div 
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              border: "1px solid #9CA3AF",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "help",
+                              fontSize: 10,
+                              color: "#9CA3AF",
+                              fontWeight: "bold"
+                            }}
+                            data-tooltip-id="cv-secret-prompt-tooltip"
+                            data-tooltip-html="These prompts remain hidden from candidates and the public job portal.<br/>Additionally, only Admins and the Job Owner can view the secret prompt."
+                          >
+                            ?
                           </div>
                         </div>
 
@@ -1278,6 +1238,18 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                           }}
                         />
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pre-Screening Questions */}
+                <div className="layered-card-outer" style={{ marginTop: 16 }}>
+                  <div className="layered-card-middle">
+                    <div className="layered-card-content">
+                      <PreScreeningQuestions
+                        questions={preScreeningQuestions}
+                        onQuestionsChange={setPreScreeningQuestions}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1338,78 +1310,24 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                           <i className="la la-eye-slash" style={{ fontSize: 16, color: "#6c757d" }}></i>
                           <span style={{ fontSize: 15, color: "#181D27", fontWeight: 700 }}>AI Interview Secret Prompt</span>
                           <span style={{ fontSize: 13, color: "#9CA3AF" }}>(optional)</span>
-                          <div style={{ position: "relative", display: "inline-block" }}>
-                            <div
-                              style={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                border: "1px solid #9CA3AF",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "help",
-                                fontSize: 10,
-                                color: "#9CA3AF",
-                                fontWeight: "bold"
-                              }}
-                              onMouseEnter={(e) => {
-                                const tooltip = e.currentTarget.querySelector('.ai-custom-tooltip') as HTMLElement;
-                                if (tooltip) {
-                                  tooltip.style.visibility = 'visible';
-                                  tooltip.style.opacity = '1';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                const tooltip = e.currentTarget.querySelector('.ai-custom-tooltip') as HTMLElement;
-                                if (tooltip) {
-                                  tooltip.style.visibility = 'hidden';
-                                  tooltip.style.opacity = '0';
-                                }
-                              }}
-                            >
-                              ?
-                              <div
-                                className="ai-custom-tooltip"
-                                style={{
-                                  position: "absolute",
-                                  bottom: "100%",
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  marginBottom: "8px",
-                                  backgroundColor: "#23262cff",
-                                  color: "white",
-                                  padding: "6px 10px",
-                                  borderRadius: "6px",
-                                  fontSize: "11px",
-                                  lineHeight: "1.3",
-                                  maxWidth: "280px",
-                                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                                  visibility: "hidden",
-                                  opacity: "0",
-                                  transition: "opacity 0.2s, visibility 0.2s",
-                                  zIndex: 1000,
-                                  pointerEvents: "none"
-                                }}
-                              >
-                                These prompts remain hidden from candidates and the public job portal.
-                                <br />
-                                Additionally, only Admins and the Job Owner can view the secret prompt.
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    top: "100%",
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    width: 0,
-                                    height: 0,
-                                    borderLeft: "6px solid transparent",
-                                    borderRight: "6px solid transparent",
-                                    borderTop: "6px solid #23262cff"
-                                  }}
-                                />
-                              </div>
-                            </div>
+                          <div 
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              border: "1px solid #9CA3AF",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "help",
+                              fontSize: 10,
+                              color: "#9CA3AF",
+                              fontWeight: "bold"
+                            }}
+                            data-tooltip-id="ai-interview-secret-prompt-tooltip"
+                            data-tooltip-html="These prompts remain hidden from candidates and the public job portal.<br/>Additionally, only Admins and the Job Owner can view the secret prompt."
+                          >
+                            ?
                           </div>
                         </div>
 
@@ -1790,7 +1708,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                   </div>
                                   
                                   {/* Editable CV Secret Prompt */}
-                                  <div>
+                                  <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #E5E7EB" }}>
                                     <label style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>CV Secret Prompt</label>
                                     <textarea
                                       value={editFormData.cvSecretPrompt}
@@ -1808,15 +1726,23 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                       placeholder="Enter CV screening instructions for AI"
                                     />
                                   </div>
+
+                                  {/* Editable Pre-Screening Questions */}
+                                  <div>
+                                    <PreScreeningQuestions
+                                      questions={editFormData.preScreeningQuestions}
+                                      onQuestionsChange={(questions) => setEditFormData({ ...editFormData, preScreeningQuestions: questions })}
+                                    />
+                                  </div>
                                 </>
                               ) : (
                                 <>
-                                  <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt ? 16 : 0, borderBottom: cvSecretPrompt ? "1px solid #E5E7EB" : "none" }}>
+                                  <div style={{ paddingBottom: 16, marginBottom: cvSecretPrompt || preScreeningQuestions.length > 0 ? 16 : 0, borderBottom: cvSecretPrompt || preScreeningQuestions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
                                     <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Screening</span>
                                     <span style={{ fontSize: 15, color: "#6c757d" }}>{screeningSetting || "Not specified"}</span>
                                   </div>
                                   {cvSecretPrompt && (
-                                    <div>
+                                    <div style={{ paddingBottom: 16, marginBottom: preScreeningQuestions.length > 0 ? 16 : 0, borderBottom: preScreeningQuestions.length > 0 ? "1px solid #E5E7EB" : "none" }}>
                                       <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>CV Secret Prompt</span>
                                       <div style={{ 
                                         padding: "12px", 
@@ -1828,6 +1754,52 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                         lineHeight: 1.5
                                       }}>
                                         {cvSecretPrompt}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {preScreeningQuestions.length > 0 && (
+                                    <div>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27" }}>Pre-Screening Questions</span>
+                                        <span style={{ 
+                                          fontSize: 12, 
+                                          fontWeight: 500, 
+                                          color: "#059669", 
+                                          backgroundColor: "#D1FAE5", 
+                                          padding: "2px 6px", 
+                                          borderRadius: "4px" 
+                                        }}>
+                                          {preScreeningQuestions.length}
+                                        </span>
+                                      </div>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                        {preScreeningQuestions.map((question, index) => (
+                                          <div key={question.id}>
+                                            <div style={{ fontSize: 15, fontWeight: 500, color: "#374151", marginBottom: 8 }}>
+                                              {index + 1}. {question.question || "Untitled question"}
+                                            </div>
+                                            {(question.type === 'dropdown' || question.type === 'checkboxes') && question.options && question.options.length > 0 && (
+                                              <ul style={{ margin: 0, paddingLeft: 20, color: "#6B7280", fontSize: 15 }}>
+                                                {question.options.filter(opt => opt.trim()).map((option, optIndex) => (
+                                                  <li key={optIndex} style={{ marginBottom: 4 }}>
+                                                    {option}
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            )}
+                                            {question.type === 'range' && (
+                                              <div style={{ fontSize: 14, color: "#6B7280", marginLeft: 20 }}>
+                                                Preferred: {question.rangeCurrency || 'PHP'} {question.rangeMin?.toLocaleString() || '0'} - {question.rangeCurrency || 'PHP'} {question.rangeMax?.toLocaleString() || '0'}
+                                              </div>
+                                            )}
+                                            {!['dropdown', 'checkboxes', 'range'].includes(question.type) && (
+                                              <div style={{ fontSize: 14, color: "#9CA3AF", fontStyle: "italic", marginLeft: 20 }}>
+                                                {question.type === 'short-answer' ? 'Short text answer' : 
+                                                 question.type === 'long-answer' ? 'Long text answer' : 'Answer'}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                   )}
@@ -2154,6 +2126,10 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
         {isSavingCareer && (
           <FullScreenLoadingAnimation title={formType === "add" ? "Saving career..." : "Updating career..."} subtext={`Please wait while we are ${formType === "add" ? "saving" : "updating"} the career`} />
         )}
+        
+        {/* Tooltip components */}
+        <Tooltip id="cv-secret-prompt-tooltip" />
+        <Tooltip id="ai-interview-secret-prompt-tooltip" />
       </div>
     </>
   )
