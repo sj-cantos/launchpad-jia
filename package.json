@@ -38,7 +38,8 @@
     "reaviz": "16.0.4",
     "sass": "1.87.0",
     "socket.io-client": "4.8.1",
-    "sweetalert2": "11.19.1"
+    "sweetalert2": "11.19.1",
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "@types/node": "22.15.3",
