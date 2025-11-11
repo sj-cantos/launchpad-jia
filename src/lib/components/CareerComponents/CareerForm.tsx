@@ -135,7 +135,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   const [isDraft, setIsDraft] = useState(false);
 
   // Stepper state
-  const steps = ["Career Details", "CV Review", "AI Interview", "Review"];
+  const steps = ["Career Details & Team Access", "CV Review & Pre-screening", "AI Interview Setup", "Review Career"];
   const stepIcons = ["la la-briefcase", "la la-clipboard-list", "la la-robot", "la la-eye"];
   const [currentStep, setCurrentStep] = useState(0); // 0-indexed
   const stepStatus = ["Completed", "Pending", "In Progress"];
@@ -685,8 +685,15 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       <style dangerouslySetInnerHTML={{ __html: errorBorderStyles }} />
       <div className="col">
         {formType === "add" ? (<div style={{ marginBottom: "35px", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: 550, color: "#374151" }}>
-            {(isDraft || currentStep > 0) && jobTitle ? `[DRAFT] ${jobTitle}` : "Add new career"}
+          <h1 style={{ fontSize: "24px", fontWeight: 550 }}>
+            {(isDraft || currentStep > 0) && jobTitle ? (
+              <>
+                <span style={{ color: "#6c757d", fontWeight: 600, marginRight: 8 }}>[DRAFT]</span>
+                <span style={{ color: "#111827" }}>{jobTitle}</span>
+              </>
+            ) : (
+              <span style={{ color: "#111827" }}>Add new career</span>
+            )}
           </h1>
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
             <button
@@ -860,8 +867,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                 {/* 1. Career Information Card */}
                 <div className="layered-card-outer">
                   <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>1. Career Information</span>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 1, }}>
+                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700,  marginLeft: "10px", marginTop: "10px"  }}>1. Career Information</span>
                     </div>
                     <div className="layered-card-content">
                       {/* Basic Information */}
@@ -1134,8 +1141,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                 {/* 2. Job Description Card */}
                 <div className="layered-card-outer">
                   <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>2. Job Description</span>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 1 }}>
+                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700, marginLeft: "10px", marginTop: "10px" }}>2. Job Description</span>
                     </div>
                     <div className="layered-card-content">
                       <div style={{
@@ -1170,8 +1177,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
               <>
                 <div className="layered-card-outer">
                   <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>1. CV Review Settings</span>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 1 }}>
+                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700, marginLeft: "10px", marginTop: "10px" }}>1. CV Review Settings</span>
                     </div>
                     <div className="layered-card-content">
                       {/* CV Screening */}
@@ -1261,8 +1268,8 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
               <>
                 <div className="layered-card-outer">
                   <div className="layered-card-middle">
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700 }}>1. AI Interview Settings</span>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 1 }}>
+                      <span style={{ fontSize: 16, color: "#181D27", fontWeight: 700, marginLeft: "10px", marginTop: "10px" }}>1. AI Interview Settings</span>
                     </div>
                     <div className="layered-card-content">
                       {/* AI Interview Screening */}
@@ -1896,29 +1903,29 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                                   {questions.length > 0 && (
                                     <div>
                                       <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>Interview Questions</span>
-                                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                                        {questions.map((category, index) => (
-                                          <div key={index} style={{ 
-                                            paddingBottom: 16,
-                                            marginBottom: 16,
-                                            borderBottom: index < questions.length - 1 ? "1px solid #E5E7EB" : "none"
-                                          }}>
-                                            <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 8 }}>
-                                              {category.category}
-                                            </span>
-                                            {category.questions && category.questions.length > 0 ? (
-                                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                                {category.questions.map((q, qIndex) => (
-                                                  <span key={qIndex} style={{ fontSize: 15, color: "#374151", lineHeight: 1.5 }}>
-                                                    • {q.question}
+                                      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                                        {(() => {
+                                          let idx = 1;
+                                          return questions.map((category, catIdx) => (
+                                            <div key={catIdx} style={{ marginBottom: 24 }}>
+                                              <span style={{ fontSize: 15, fontWeight: 600, color: "#181D27", display: "block", marginBottom: 4 }}>
+                                                {category.category || `Category ${catIdx + 1}`}
+                                              </span>
+                                              {category.questions && category.questions.length > 0 ? (
+                                                category.questions.map((q, qIdx) => (
+                                                  <span key={qIdx} style={{ fontSize: 15, color: "#374151", lineHeight: 1.5, display: "block", marginBottom: 8 }}>
+                                                    {idx++}. {q.question}
                                                   </span>
-                                                ))}
-                                              </div>
-                                            ) : (
-                                              <span style={{ fontSize: 15, color: "#6c757d" }}>No questions added</span>
-                                            )}
-                                          </div>
-                                        ))}
+                                                ))
+                                              ) : (
+                                                <span style={{ fontSize: 15, color: "#6c757d" }}>No questions added</span>
+                                              )}
+                                              {catIdx < questions.length - 1 && (
+                                                <div style={{ borderBottom: "1px solid #E5E7EB", margin: "0px 0" }} />
+                                              )}
+                                            </div>
+                                          ));
+                                        })()}
                                       </div>
                                     </div>
                                   )}
