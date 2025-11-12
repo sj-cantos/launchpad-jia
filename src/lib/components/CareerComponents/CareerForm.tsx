@@ -413,6 +413,16 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       }
     }
 
+    // Validate AI Interview questions: require at least 5 total generated questions
+    if (currentStep === 2) {
+      const totalQuestions = questions.reduce((acc, q) => acc + (q.questions ? q.questions.length : 0), 0);
+      if (totalQuestions < 5) {
+        const qErrors: { [key: string]: string } = { interviewQuestions: "Please add at least 5 questions" };
+        setFieldErrors(qErrors);
+        return;
+      }
+    }
+
     // Validate salary if provided
     if (Number(minimumSalary) && Number(maximumSalary) && Number(minimumSalary) > Number(maximumSalary)) {
       errorToast("Minimum salary cannot be greater than maximum salary", 1300);
@@ -1363,9 +1373,17 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
                 {/* 2. Interview Questions Card */}
                 <InterviewQuestionGeneratorV2
                   questions={questions}
-                  setQuestions={setQuestions}
+                  setQuestions={(qs) => {
+                    // clear interviewQuestions error when user makes changes
+                    if (fieldErrors.interviewQuestions) {
+                      const { interviewQuestions, ...rest } = fieldErrors;
+                      setFieldErrors(rest);
+                    }
+                    setQuestions(qs);
+                  }}
                   jobTitle={jobTitle}
                   description={description}
+                  error={fieldErrors.interviewQuestions}
                 />
               </>
             )}

@@ -11,7 +11,7 @@ import InterviewQuestionModal from "./InterviewQuestionModal";
 import FullScreenLoadingAnimation from "./FullScreenLoadingAnimation";
 
 export default function (props) {
-  const { questions, setQuestions, jobTitle, description } = props;
+  const { questions, setQuestions, jobTitle, description, error } = props;
   const [questionGenPrompt, setQuestionGenPrompt] = useState("");
   const questionCount = 5;
   const [showQuestionModal, setShowQuestionModal] = useState("");
@@ -363,7 +363,16 @@ export default function (props) {
                 <i className="la la-bolt" style={{ fontSize: 20 }}></i> Generate All Questions
               </button>
           </div>
-            <div className="layered-card-content">
+
+            
+
+              <div className="layered-card-content">
+                  {/* Render inline error passed from parent (e.g., require at least 5 questions) */}
+              {error && (
+                <span style={{ fontSize: 15, color: "#EF4444", marginTop: 4, display: "block", marginLeft: "10px" }}>
+                  {error}
+                </span>
+              )}
               <div className="questions-set">
           {questions.map((group, index) => (
             <div
