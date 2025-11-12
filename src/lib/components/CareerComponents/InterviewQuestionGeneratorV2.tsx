@@ -369,9 +369,13 @@ export default function (props) {
               <div className="layered-card-content">
                   {/* Render inline error passed from parent (e.g., require at least 5 questions) */}
               {error && (
-                <span style={{ fontSize: 15, color: "#EF4444", marginTop: 4, display: "block", marginLeft: "10px" }}>
-                  {error}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, marginLeft: 10 }}>
+                  {/* Use SVG from public folder for consistent assets */}
+                  <img src="/iconsV3/alert.svg" alt="alert" width={16} height={16} style={{ display: "block" }} />
+                  <span style={{ fontSize: 15, color: "#EF4444", display: "block" }}>
+                    {error}
+                  </span>
+                </div>
               )}
               <div className="questions-set">
           {questions.map((group, index) => (
