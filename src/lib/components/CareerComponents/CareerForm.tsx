@@ -70,7 +70,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
   const [workSetup, setWorkSetup] = useState(career?.workSetup || "");
   const [workSetupRemarks, setWorkSetupRemarks] = useState(career?.workSetupRemarks || "");
   const [screeningSetting, setScreeningSetting] = useState(career?.screeningSetting || "Good Fit and above");
-  const [employmentType, setEmploymentType] = useState(career?.employmentType || "Full-Time");
+  const [employmentType, setEmploymentType] = useState(career?.employmentType);
   const [requireVideo, setRequireVideo] = useState(career?.requireVideo || true);
   const [salaryNegotiable, setSalaryNegotiable] = useState(career?.salaryNegotiable || true);
   const [minimumSalary, setMinimumSalary] = useState(career?.minimumSalary || "");
@@ -121,7 +121,7 @@ export default function CareerForm({ career, formType, setShowEditModal }: { car
       questions: [],
     },
   ]);
-  const [country, setCountry] = useState(career?.country || "");
+  const [country, setCountry] = useState(career?.country || "Philippines");
   const [province, setProvince] = useState(career?.province || "");
   const [city, setCity] = useState(career?.location || "");
   const [provinceList, setProvinceList] = useState([]);
